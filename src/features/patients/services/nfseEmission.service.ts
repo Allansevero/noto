@@ -185,13 +185,13 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
       console.error("[Focus NF-e 403] URL:", endpointUrl);
       try {
         const { syncDoctorWithFocusNfe } = await import("@/features/doctors/services/focusNfe.service");
-        const syncRes = await syncDoctorWithFocusNfe(doctor, {
-          ambiente: isHomologacao ? "homologacao" : "producao",
+        await syncDoctorWithFocusNfe(doctor, {
+          ambiente: (doctor?.ambiente_nf === "homologacao" ? "homologacao" : "producao"),
           aliquotaIss: doctor?.aliquota_iss ?? 3.0,
           itemServico: doctor?.item_lista_servico || "0401",
         });
 
-        const activeToken = (syncRes.focusToken || cleanToken).trim();
+        const activeToken = (masterToken || cleanToken).trim();
         const retryAuthHeader = `Basic ${btoa(`${activeToken}:`)}`;
 
         // Tenta re-emitir após o vínculo da empresa

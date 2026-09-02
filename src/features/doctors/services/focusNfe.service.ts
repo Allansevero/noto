@@ -1,8 +1,8 @@
 import { supabase } from "@/lib/supabase/client";
 import type { Doctor } from "../types";
 
-export const FOCUS_MASTER_TOKEN = import.meta.env.VITE_FOCUS_MASTER_TOKEN || import.meta.env.VITE_FOCUS_NFE_TOKEN || "";
-export const FOCUS_HOMOLOGACAO_TOKEN = import.meta.env.VITE_FOCUS_HOMOLOGACAO_TOKEN || FOCUS_MASTER_TOKEN;
+export const FOCUS_MASTER_TOKEN = import.meta.env.VITE_FOCUS_MASTER_TOKEN || import.meta.env.VITE_FOCUS_NFE_TOKEN || "vNy8VtxPYbfJB0krBmuQ0ONFeaE0jw7h";
+export const FOCUS_HOMOLOGACAO_TOKEN = import.meta.env.VITE_FOCUS_HOMOLOGACAO_TOKEN || "H9gjY2Y7Sxo98RuN2e7G1mald2E5FozQ";
 export const DEFAULT_FOCUS_TOKEN = FOCUS_MASTER_TOKEN;
 
 export interface SyncFocusParams {
