@@ -374,9 +374,11 @@ export async function checkNfseStatus(patientId: string): Promise<NfseEmissionRe
 
   const doctor = patient.medicos;
   const isHomologacao = (doctor?.ambiente_nf || "producao") === "homologacao";
+  // Usa SEMPRE o master token para consulta — o focus_token da empresa não tem permissão de leitura
+  const masterToken = import.meta.env.VITE_FOCUS_MASTER_TOKEN || DEFAULT_FOCUS_TOKEN;
   const token = isHomologacao
     ? (import.meta.env.VITE_FOCUS_HOMOLOGACAO_TOKEN || FOCUS_HOMOLOGACAO_TOKEN)
-    : (doctor?.focus_token || import.meta.env.VITE_FOCUS_NFE_TOKEN || DEFAULT_FOCUS_TOKEN);
+    : masterToken;
 
   try {
     const authHeader = `Basic ${btoa(`${token}:`)}`;
@@ -512,20 +514,18 @@ export async function cancelNfseFocus(patientId: string, justificativa: string):
 
   const doctor = patient.medicos;
   const isHomologacao = (doctor?.ambiente_nf || "producao") === "homologacao";
+  // Usa SEMPRE o master token para cancelamento
+  const masterToken = import.meta.env.VITE_FOCUS_MASTER_TOKEN || DEFAULT_FOCUS_TOKEN;
   const token = isHomologacao
     ? (import.meta.env.VITE_FOCUS_HOMOLOGACAO_TOKEN || FOCUS_HOMOLOGACAO_TOKEN)
-    : (doctor?.focus_token || import.meta.env.VITE_FOCUS_NFE_TOKEN || DEFAULT_FOCUS_TOKEN);
+    : masterToken;
 
-  const isBrowser = typeof window !== "undefined";
-  const baseUrl = isHomologacao
-    ? (isBrowser ? "/focus-homologacao-api" : "https://homologacao.focusnfe.com.br")
-    : (isBrowser ? "/focus-api" : "https://api.focusnfe.com.br");
-
+  const ambiente = isHomologacao ? "homologacao" : "producao";
   const authHeader = `Basic ${btoa(`${token}:`)}`;
   const cleanJustificativa = justificativa?.trim() || "Cancelamento de consulta médica solicitado pelo prestador.";
 
   try {
-    let response = await fetch(`${baseUrl}/v2/nfsen/${patient.focus_ref}`, {
+    let response = await fetch(getFocusApiUrl(`/v2/nfsen/${patient.focus_ref}`, ambiente), {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -535,7 +535,7 @@ export async function cancelNfseFocus(patientId: string, justificativa: string):
     });
 
     if (!response.ok) {
-      response = await fetch(`${baseUrl}/v2/nfse/${patient.focus_ref}`, {
+      response = await fetch(getFocusApiUrl(`/v2/nfse/${patient.focus_ref}`, ambiente), {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -543,6 +543,12 @@ export async function cancelNfseFocus(patientId: string, justificativa: string):
         },
         body: JSON.stringify({ justificativa: cleanJustificativa }),
       });
+    }
+
+    const cancelData = await response.json().catch(() => null);
+    if (cancelData?.status === "erro_cancelamento") {
+      const errMsg = cancelData?.erros?.[0]?.mensagem || "Erro retornado pela prefeitura no cancelamento.";
+      throw new Error(errMsg);
     }
 
     await supabase

@@ -43,7 +43,7 @@ export default async function handler(req, res) {
       },
     };
 
-    if (["POST", "PUT", "PATCH"].includes(req.method) && req.body) {
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method) && req.body) {
       fetchOptions.body =
         typeof req.body === "string" ? req.body : JSON.stringify(req.body);
     }
