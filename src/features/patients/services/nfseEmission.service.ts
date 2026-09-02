@@ -100,7 +100,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
 
   try {
     const authHeader = `Basic ${btoa(`${token}:`)}`;
-    const response = await fetch(endpointUrl, {
+    let response = await fetch(endpointUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -109,7 +109,46 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
       body: JSON.stringify(payloadNacional),
     });
 
-    const data = await response.json().catch(() => null);
+    let data = await response.json().catch(() => null);
+
+    // Fallback: Se /v2/nfsen retornar 404, tenta a rota municipal padrão /v2/nfse
+    if (response.status === 404) {
+      const municipalUrl = `${baseUrl}/v2/nfse?ref=${ref}`;
+      const payloadMunicipal: Record<string, unknown> = {
+        data_emissao: dataEmissaoComFuso,
+        prestador: {
+          cnpj: cleanCnpj,
+          inscricao_municipal: doctor?.inscricao_municipal || undefined,
+          codigo_municipio: doctor?.codigo_municipio_ibge || "4314902",
+        },
+        tomador: {
+          cpf: cleanCpfTomador || undefined,
+          razao_social: patient.nome_completo,
+          email: patient.email || undefined,
+          telefone: cleanDigits(patient.telefone) || undefined,
+        },
+        servico: {
+          valor_servicos: Number(valorServicosReais.toFixed(2)),
+          aliquota: Number(doctor?.aliquota_iss || 3.0),
+          item_lista_servico: doctor?.item_lista_servico?.replace(/\D/g, "") || "0401",
+          discriminacao: `REFERENTE 1 CONSULTA EM PSIQUIATRA: DRA ALICE XAVIER CRM${doctor?.crm || '36948'} - REALIZADA NA DATA ${dataConsultaFormatada} - PACIENTE: ${patient.nome_completo}`,
+          codigo_tributario_municipio: doctor?.codigo_tributario_municipio || undefined,
+          codigo_municipio: doctor?.codigo_municipio_ibge || "4314902",
+          iss_retido: false,
+        },
+      };
+
+      response = await fetch(municipalUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+        },
+        body: JSON.stringify(payloadMunicipal),
+      });
+
+      data = await response.json().catch(() => null);
+    }
 
     if (response.ok || response.status === 200 || response.status === 201 || response.status === 202) {
       const nowIso = new Date().toISOString();
@@ -180,6 +219,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
       const errorMsg =
         data?.mensagem ||
         data?.erros?.[0]?.mensagem ||
+        data?.erros?.[0] ||
         data?.message ||
         `Erro HTTP ${response.status} na Focus NF-e`;
 

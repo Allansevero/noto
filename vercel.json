@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/focus-api/:match*",
+      "destination": "https://api.focusnfe.com.br/:match*"
+    },
+    {
+      "source": "/focus-homologacao-api/:match*",
+      "destination": "https://homologacao.focusnfe.com.br/:match*"
+    },
+    {
+      "source": "/((?!assets|favicon|logo|robots.txt|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
