@@ -193,6 +193,7 @@ export async function createDoctor(input: CreateDoctorInput): Promise<Doctor> {
       ambiente: (input.ambiente_nf as 'homologacao' | 'producao') || 'producao',
       aliquotaIss: input.aliquota_iss ?? 3.0,
       itemServico: input.item_lista_servico || '0401',
+      regimeTributario: input.optante_simples_nacional ? 1 : 3,
       arquivoCertificadoBase64: input.arquivoCertificadoBase64,
       senhaCertificado: input.senhaCertificado,
     });

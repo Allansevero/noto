@@ -323,6 +323,7 @@ export function DoctorFormDialog({
           item_lista_servico: values.item_lista_servico || "041601",
           aliquota_iss: values.aliquota_iss || 2.0,
           status: doctorToEdit.status || "Ativo",
+          codigo_municipio_ibge: values.codigo_municipio_ibge || (doctorToEdit as any).codigo_municipio_ibge || "",
           endereco: values.cep
             ? {
                 cep: values.cep,
@@ -335,6 +336,21 @@ export function DoctorFormDialog({
               }
             : doctorToEdit.endereco,
         });
+
+        // Sincroniza sempre os parâmetros fiscais (regime tributário, alíquota, município) com a Focus NF-e
+        try {
+          const { syncDoctorWithFocusNfe } = await import("../services/focusNfe.service");
+          await syncDoctorWithFocusNfe(updatedDoctor, {
+            ambiente: doctorToEdit.ambiente_nf || "producao",
+            aliquotaIss: values.aliquota_iss || 2.0,
+            itemServico: values.item_lista_servico || "041601",
+            regimeTributario: values.optante_simples_nacional ? 1 : 3,
+            arquivoCertificadoBase64: certBase64 || undefined,
+            senhaCertificado: certPassword || undefined,
+          });
+        } catch (syncErr: any) {
+          console.warn("Aviso ao sincronizar parâmetros com a Focus NF-e:", syncErr.message);
+        }
 
         if (certBase64) {
           try {
