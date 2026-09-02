@@ -75,7 +75,7 @@ export function DoctorSettingsPage({
 
   // Estados dos Parâmetros Fiscais (Aba 2)
   const [ambiente, setAmbiente] = useState<"homologacao" | "producao">(
-    doctor.ambiente_nf || "homologacao"
+    doctor.ambiente_nf || "producao"
   );
   const [regimeTributario, setRegimeTributario] = useState<string>(
     doctor.optante_simples_nacional ? "1" : "3"
@@ -124,7 +124,7 @@ export function DoctorSettingsPage({
 
   // Sincroniza todos os estados sempre que o objeto 'doctor' mudar
   useEffect(() => {
-    setAmbiente(doctor.ambiente_nf || "homologacao");
+    setAmbiente(doctor.ambiente_nf || "producao");
     setRegimeTributario(doctor.optante_simples_nacional ? "1" : "3");
     setInscricaoMunicipal(doctor.inscricao_municipal || "");
     setCodigoTributarioMunicipio(doctor.codigo_tributario_municipio || "");

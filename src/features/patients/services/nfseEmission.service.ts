@@ -30,7 +30,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
   }
 
   const doctor = patient.medicos;
-  const isHomologacao = (doctor?.ambiente_nf || "homologacao") === "homologacao";
+  const isHomologacao = (doctor?.ambiente_nf || "producao") === "homologacao";
 
   // Usa o token de homologação oficial quando em modo homologação
   const token = isHomologacao
@@ -232,7 +232,7 @@ export async function checkNfseStatus(patientId: string): Promise<NfseEmissionRe
   }
 
   const doctor = patient.medicos;
-  const isHomologacao = (doctor?.ambiente_nf || "homologacao") === "homologacao";
+  const isHomologacao = (doctor?.ambiente_nf || "producao") === "homologacao";
   const token = isHomologacao
     ? (import.meta.env.VITE_FOCUS_HOMOLOGACAO_TOKEN || FOCUS_HOMOLOGACAO_TOKEN)
     : (doctor?.focus_token || import.meta.env.VITE_FOCUS_NFE_TOKEN || DEFAULT_FOCUS_TOKEN);
@@ -373,7 +373,7 @@ export async function cancelNfseFocus(patientId: string, justificativa: string):
   }
 
   const doctor = patient.medicos;
-  const isHomologacao = (doctor?.ambiente_nf || "homologacao") === "homologacao";
+  const isHomologacao = (doctor?.ambiente_nf || "producao") === "homologacao";
   const token = isHomologacao
     ? (import.meta.env.VITE_FOCUS_HOMOLOGACAO_TOKEN || FOCUS_HOMOLOGACAO_TOKEN)
     : (doctor?.focus_token || import.meta.env.VITE_FOCUS_NFE_TOKEN || DEFAULT_FOCUS_TOKEN);

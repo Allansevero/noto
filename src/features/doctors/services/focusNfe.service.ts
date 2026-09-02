@@ -1,8 +1,8 @@
 import { supabase } from "@/lib/supabase/client";
 import type { Doctor } from "../types";
 
-export const FOCUS_MASTER_TOKEN = import.meta.env.VITE_FOCUS_MASTER_TOKEN || "";
-export const FOCUS_HOMOLOGACAO_TOKEN = import.meta.env.VITE_FOCUS_HOMOLOGACAO_TOKEN || "";
+export const FOCUS_MASTER_TOKEN = import.meta.env.VITE_FOCUS_MASTER_TOKEN || import.meta.env.VITE_FOCUS_NFE_TOKEN || "";
+export const FOCUS_HOMOLOGACAO_TOKEN = import.meta.env.VITE_FOCUS_HOMOLOGACAO_TOKEN || FOCUS_MASTER_TOKEN;
 export const DEFAULT_FOCUS_TOKEN = FOCUS_MASTER_TOKEN;
 
 export interface SyncFocusParams {
@@ -324,7 +324,7 @@ export async function syncDoctorWithFocusNfe(
   const updatePayload: Record<string, unknown> = {
     focus_empresa_id: focusEmpresaId,
     focus_token: focusToken,
-    ambiente_nf: params?.ambiente || "homologacao",
+    ambiente_nf: params?.ambiente || "producao",
     aliquota_iss: params?.aliquotaIss ?? (doctor.aliquota_iss || 3.0),
     item_lista_servico: params?.itemServico || (doctor.item_lista_servico || "0401"),
     optante_simples_nacional: (params?.regimeTributario ?? 1) === 1,

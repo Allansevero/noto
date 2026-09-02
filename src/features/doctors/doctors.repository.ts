@@ -65,7 +65,7 @@ function mapRow(row: Record<string, unknown>, patientCount = 0): Doctor {
     emissora: emissoraVal,
     // Campos Focus NFe
     focus_empresa_id: (row.focus_empresa_id as string | null) ?? undefined,
-    ambiente_nf: (row.ambiente_nf as Doctor['ambiente_nf']) ?? 'homologacao',
+    ambiente_nf: (row.ambiente_nf as Doctor['ambiente_nf']) ?? 'producao',
     item_lista_servico: (row.item_lista_servico as string | null) ?? undefined,
     aliquota_iss: (row.aliquota_iss as number | null) ?? undefined,
     optante_simples_nacional: (row.optante_simples_nacional as boolean | null) ?? undefined,
@@ -138,7 +138,7 @@ export async function createDoctor(input: CreateDoctorInput): Promise<Doctor> {
     chave_pix: input.chave_pix || null,
     status: input.status ?? 'Ativo',
     // Fiscais Focus NFe
-    ambiente_nf: input.ambiente_nf ?? 'homologacao',
+    ambiente_nf: input.ambiente_nf ?? 'producao',
     item_lista_servico: input.item_lista_servico ?? '040101',
     aliquota_iss: input.aliquota_iss ?? 3.0,
     optante_simples_nacional: input.optante_simples_nacional ?? true,
@@ -180,7 +180,7 @@ export async function createDoctor(input: CreateDoctorInput): Promise<Doctor> {
   try {
     const { syncDoctorWithFocusNfe } = await import('./services/focusNfe.service');
     const syncRes = await syncDoctorWithFocusNfe(createdDoctor, {
-      ambiente: (input.ambiente_nf as 'homologacao' | 'producao') || 'homologacao',
+      ambiente: (input.ambiente_nf as 'homologacao' | 'producao') || 'producao',
       aliquotaIss: input.aliquota_iss ?? 3.0,
       itemServico: input.item_lista_servico || '0401',
     });

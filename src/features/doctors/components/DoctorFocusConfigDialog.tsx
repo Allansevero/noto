@@ -70,7 +70,7 @@ export function DoctorFocusConfigDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Estados do Passo 2 (Parâmetros Fiscais)
-  const [ambiente, setAmbiente] = useState<"homologacao" | "producao">("homologacao");
+  const [ambiente, setAmbiente] = useState<"homologacao" | "producao">("producao");
   const [aliquotaIss, setAliquotaIss] = useState<string>("3.00");
   const [itemServico, setItemServico] = useState<string>("0401");
   const [regimeTributario, setRegimeTributario] = useState<string>("1");
@@ -79,7 +79,7 @@ export function DoctorFocusConfigDialog({
 
   useEffect(() => {
     if (doctor) {
-      setAmbiente(doctor.ambiente_nf || "homologacao");
+      setAmbiente(doctor.ambiente_nf || "producao");
       setAliquotaIss(String(doctor.aliquota_iss ?? "3.00"));
       setItemServico(doctor.item_lista_servico || "0401");
       setRegimeTributario(doctor.optante_simples_nacional ? "1" : "3");
