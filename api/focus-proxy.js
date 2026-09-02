@@ -12,7 +12,9 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const { path = "", ref = "", ambiente = "producao" } = req.query;
+  const { path: rawPath = "", ref = "", ambiente = "producao" } = req.query;
+  // URLSearchParams codifica os '/' do path — precisamos decodificar
+  const path = decodeURIComponent(rawPath);
   const masterToken =
     process.env.VITE_FOCUS_MASTER_TOKEN ||
     process.env.VITE_FOCUS_NFE_TOKEN ||
@@ -29,6 +31,7 @@ export default async function handler(req, res) {
 
   const queryRef = ref ? `?ref=${encodeURIComponent(ref)}` : "";
   const targetUrl = `${host}${path}${queryRef}`;
+  console.log(`[Focus Proxy] ${req.method} → ${targetUrl}`);
 
   const authHeader =
     req.headers["authorization"] ||

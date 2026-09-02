@@ -551,6 +551,7 @@ export async function cancelNfseFocus(patientId: string, justificativa: string):
       throw new Error(errMsg);
     }
 
+    // Atualiza pacientes
     await supabase
       .from("pacientes")
       .update({
@@ -558,6 +559,16 @@ export async function cancelNfseFocus(patientId: string, justificativa: string):
         nfse_erro_motivo: `Cancelada: ${cleanJustificativa}`,
       } as any)
       .eq("id", patient.id);
+
+    // Atualiza também a tabela notas_fiscais (se existir o registro)
+    try {
+      await supabase
+        .from("notas_fiscais")
+        .update({ status: "Nota Cancelada" } as any)
+        .eq("focus_ref", patient.focus_ref);
+    } catch (nfErr) {
+      console.warn("Aviso ao atualizar notas_fiscais no cancelamento:", nfErr);
+    }
 
     return {
       success: true,
