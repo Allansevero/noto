@@ -151,10 +151,10 @@ export async function createDoctor(input: CreateDoctorInput): Promise<Doctor> {
     ambiente_nf: input.ambiente_nf ?? 'producao',
     item_lista_servico: input.item_lista_servico ?? '040101',
     aliquota_iss: input.aliquota_iss ?? 3.0,
-    optante_simples_nacional: input.optante_simples_nacional ?? true,
+    optante_simples_nacional: input.optante_simples_nacional ?? false,
     regime_especial_tributacao: input.regime_especial_tributacao || null,
     codigo_tributario_municipio: input.codigo_tributario_municipio || null,
-    codigo_municipio_ibge: input.codigo_municipio_ibge ?? '4314902',
+    codigo_municipio_ibge: input.codigo_municipio_ibge || null,
   };
 
   const { data, error } = await supabase

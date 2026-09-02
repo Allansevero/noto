@@ -43,14 +43,26 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
 
   const cleanCnpj = cleanDigits(doctor?.cnpj);
   const cleanCpfTomador = cleanDigits(patient.cpf);
-
-  // Evita erro E0008: Gera a data de emissão no horário local com 2 minutos de margem retroativa
-  const nowSafe = new Date(Date.now() - 2 * 60 * 1000);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const dataEmissaoLocal = `${nowSafe.getFullYear()}-${pad(nowSafe.getMonth() + 1)}-${pad(nowSafe.getDate())}T${pad(nowSafe.getHours())}:${pad(nowSafe.getMinutes())}:${pad(nowSafe.getSeconds())}`;
+  // Evita erro E0008: Gera a data de emissão garantindo o fuso horário oficial de Brasília com 5 min de margem
+  const dEmissao = new Date(Date.now() - 5 * 60 * 1000);
+  const partsEmissao = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(dEmissao);
+  const dateMap: Record<string, string> = {};
+  partsEmissao.forEach((p) => {
+    dateMap[p.type] = p.value;
+  });
+  const dataEmissaoComFuso = `${dateMap.year}-${dateMap.month}-${dateMap.day}T${dateMap.hour}:${dateMap.minute}:${dateMap.second}-03:00`;
 
   // Se o usuário especificou a data da consulta, usa ela como competência e discriminação
-  const dataCompetencia = dataConsultaParam || patient.data_consulta || `${nowSafe.getFullYear()}-${pad(nowSafe.getMonth() + 1)}-${pad(nowSafe.getDate())}`;
+  const dataCompetencia = dataConsultaParam || patient.data_consulta || `${dateMap.year}-${dateMap.month}-${dateMap.day}`;
 
   // Formata a data para a discriminação (ex: 27/08/2026)
   const [anoComp, mesComp, diaComp] = dataCompetencia.split("-");
@@ -63,9 +75,6 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
   const valorServicosReais = rawValor > 1000 ? rawValor / 100 : rawValor;
 
   const isOptanteSimples = Boolean(doctor?.optante_simples_nacional);
-
-  // Data no formato aceito pelo SPED da NFS-e Nacional
-  const dataEmissaoComFuso = `${dataEmissaoLocal}-03:00`;
 
   // Código do município IBGE configurado para o médico
   const doctorIbge = cleanDigits(doctor?.codigo_municipio_ibge ?? (doctor?.endereco as any)?.codigo_municipio_ibge ?? undefined);
@@ -80,7 +89,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
     emitente_dps: "1",
     codigo_municipio_emissora: doctorIbgeInt,
     cnpj_prestador: cleanCnpj || "55067216000166",
-    codigo_opcao_simples_nacional: isOptanteSimples ? "3" : "1", // 1 = Não Optante
+    codigo_opcao_simples_nacional: isOptanteSimples ? "2" : "1", // 1 = Não Optante, 2 = Optante Simples Nacional
     regime_especial_tributacao: "0",
     cpf_tomador: cleanCpfTomador || "11111111111",
     razao_social_tomador: patient.nome_completo,
@@ -249,7 +258,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
           nfse_pdf_url: pdfUrl,
           nfse_xml_url: xmlUrl,
           data_nota_gerada: nowIso,
-          nfse_data_emissao: dataEmissaoLocal,
+          nfse_data_emissao: dataEmissaoComFuso,
           data_consulta: dataCompetencia,
           nfse_erro_motivo: null,
         } as any)
