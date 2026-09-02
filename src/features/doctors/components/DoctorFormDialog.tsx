@@ -353,12 +353,12 @@ export function DoctorFormDialog({
         }
 
         if (certBase64) {
-          try {
-            await validateAndUploadCertificate(updatedDoctor, certBase64, certPassword);
-            toast.success("Certificado Digital A1 instalado com sucesso na Focus NF-e!");
-          } catch (certErr: any) {
-            toast.warning(`Médico salvo, mas certificado Focus NF-e: ${certErr.message}`);
+          const certResult = await validateAndUploadCertificate(updatedDoctor, certBase64, certPassword);
+          if (!certResult.valid) {
+            toast.error(`Senha do certificado inválida: ${certResult.message}. Corrija a senha e tente novamente.`);
+            return; // Bloqueia: não fecha o dialog, não confirma o salvamento
           }
+          toast.success("Certificado Digital A1 instalado com sucesso na Focus NF-e!");
         }
 
         toast.success(`Cadastro de Dr(a). ${nomeCompleto} atualizado com sucesso!`);
@@ -368,6 +368,19 @@ export function DoctorFormDialog({
         toast.error(err.message || "Erro ao atualizar médico.");
       }
       return;
+    }
+
+    // Se foi fornecido certificado, valida ANTES de salvar o médico
+    if (certBase64) {
+      const preCheckResult = await validateAndUploadCertificate(
+        { cnpj: values.cnpj, cpf: "", nome_completo: nomeCompleto, nome_fantasia: values.nome_fantasia || values.razao_social, razao_social: values.razao_social, email: values.email_empresa || "", telefone: formattedWhatsapp, optante_simples_nacional: values.optante_simples_nacional ?? false, endereco: values.cep ? { cep: values.cep, logradouro: values.logradouro ?? "", numero: values.numero ?? "", complemento: values.complemento, bairro: values.bairro ?? "", cidade: values.cidade ?? "", uf: values.uf ?? "" } : undefined, codigo_municipio_ibge: values.codigo_municipio_ibge || "" } as any,
+        certBase64,
+        certPassword
+      );
+      if (!preCheckResult.valid) {
+        toast.error(`Senha do certificado inválida: ${preCheckResult.message}. Corrija a senha e tente novamente.`);
+        return; // Bloqueia o cadastro até a senha estar correta
+      }
     }
 
     const doctor = await create({
