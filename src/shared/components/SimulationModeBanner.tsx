@@ -6,10 +6,10 @@ interface SimulationModeBannerProps {
 }
 
 export function SimulationModeBanner({ onUpgradeClick }: SimulationModeBannerProps) {
-  const { subscription, isLoading } = useSubscription();
+  const { hasActiveSubscription, isLoading } = useSubscription();
 
   // Não exibe enquanto carrega ou se o usuário já tiver plano ativo
-  if (isLoading || subscription?.status === "ativa") {
+  if (isLoading || hasActiveSubscription) {
     return null;
   }
 

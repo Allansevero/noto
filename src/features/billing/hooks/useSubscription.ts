@@ -76,8 +76,9 @@ export function useSubscription() {
     return calculateUsageQuota(subscription, allDoctors.length, notasMesAtualCount);
   }, [subscription, allDoctors.length, notasMesAtualCount]);
 
+  const statusNormalized = subscription?.status?.toLowerCase().trim() || "";
   const hasActiveSubscription = Boolean(
-    subscription && subscription.status === "ativa"
+    subscription && (statusNormalized === "ativa" || statusNormalized === "ativo" || statusNormalized === "trial")
   );
 
   return {
