@@ -30,7 +30,8 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
   }
 
   const doctor = patient.medicos;
-  const isHomologacao = (doctor?.ambiente_nf || "producao") === "homologacao";
+  // Ambiente do médico: null/undefined = produção. Só usa homologação se explicitamente configurado.
+  const isHomologacao = doctor?.ambiente_nf === "homologacao";
 
   // SEMPRE usa o token master para emissão — o doctor.focus_token é um token de empresa
   // que a Focus retorna mas que NÃO tem permissão para emitir notas.
@@ -115,7 +116,8 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
       try {
         const { syncDoctorWithFocusNfe } = await import("@/features/doctors/services/focusNfe.service");
         await syncDoctorWithFocusNfe(doctor, {
-          ambiente: isHomologacao ? "homologacao" : "producao",
+          // Preserva o ambiente configurado pelo médico. Nunca sobrescreve para homologação automaticamente.
+          ambiente: (doctor?.ambiente_nf === "homologacao" ? "homologacao" : "producao"),
           aliquotaIss: doctor?.aliquota_iss ?? 3.0,
           itemServico: doctor?.item_lista_servico || "0401",
         });

@@ -326,7 +326,8 @@ export async function syncDoctorWithFocusNfe(
   const updatePayload: Record<string, unknown> = {
     focus_empresa_id: focusEmpresaId,
     focus_token: focusToken,
-    ambiente_nf: params?.ambiente || "producao",
+    // Preserva o ambiente_nf atual do médico; só altera se params?.ambiente for passado explicitamente
+    ambiente_nf: params?.ambiente || doctor.ambiente_nf || "producao",
     aliquota_iss: params?.aliquotaIss ?? (doctor.aliquota_iss || 3.0),
     item_lista_servico: params?.itemServico || (doctor.item_lista_servico || "0401"),
     optante_simples_nacional: (params?.regimeTributario ?? 1) === 1,
