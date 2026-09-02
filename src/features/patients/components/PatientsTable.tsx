@@ -38,7 +38,6 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { Patient } from "../types";
 
 // Função para mascarar CPF na UI (Ex: 123.***.***-00)
 function maskCPF(cpf: string) {

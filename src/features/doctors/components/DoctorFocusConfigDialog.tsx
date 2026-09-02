@@ -23,13 +23,11 @@ import {
   validateAndUploadCertificate,
 } from "../services/focusNfe.service";
 import {
-  Building2,
   CheckCircle2,
   FileText,
   Loader2,
   ShieldCheck,
   Zap,
-  Key,
   UploadCloud,
   FileCheck,
   Eye,

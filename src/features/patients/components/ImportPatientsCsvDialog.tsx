@@ -31,7 +31,6 @@ import {
   Download,
   ArrowRight,
   ArrowLeft,
-  Users,
   Loader2,
   FileCheck,
   Check,
@@ -43,7 +42,6 @@ import { useDoctors } from "@/features/doctors/hooks/useDoctors";
 import {
   parsePatientsCsv,
   downloadSampleCsv,
-  type ParsedCsvPatient,
   type CsvParseResult,
 } from "../services/csvParser.service";
 import { createPatientsBatch } from "../patients.repository";

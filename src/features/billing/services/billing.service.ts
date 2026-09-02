@@ -1,4 +1,4 @@
-import type { Subscription, Plan, UsageQuota } from "../types";
+import type { Subscription, UsageQuota } from "../types";
 
 /**
  * Calcula os indicadores de consumo e prazos da assinatura

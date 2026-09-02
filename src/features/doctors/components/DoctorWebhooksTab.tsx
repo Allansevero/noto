@@ -31,12 +31,8 @@ import {
   Plus,
   Trash2,
   RefreshCw,
-  CheckCircle2,
-  ExternalLink,
-  ShieldCheck,
   Radio,
   Loader2,
-  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -69,7 +65,7 @@ export function DoctorWebhooksTab({ doctor }: DoctorWebhooksTabProps) {
   const loadHooks = async () => {
     setIsLoading(true);
     try {
-      const data = await listFocusHooks(doctor.focus_token);
+      const data = await listFocusHooks(doctor.focus_token || undefined);
       // Filtra os hooks deste médico/CNPJ se houver
       const cleanCnpj = doctor.cnpj ? doctor.cnpj.replace(/\D/g, "") : "";
       const filtered = cleanCnpj
@@ -99,9 +95,9 @@ export function DoctorWebhooksTab({ doctor }: DoctorWebhooksTabProps) {
       const res = await createFocusHook({
         event,
         url,
-        cnpj: doctor.cnpj,
+        cnpj: doctor.cnpj || undefined,
         authorization: authorization || undefined,
-        token: doctor.focus_token,
+        token: doctor.focus_token || undefined,
       });
 
       if (res.success) {
@@ -122,7 +118,7 @@ export function DoctorWebhooksTab({ doctor }: DoctorWebhooksTabProps) {
   const handleDeleteHook = async (hookId: string) => {
     setDeletingId(hookId);
     try {
-      const ok = await deleteFocusHook(hookId, doctor.focus_token);
+      const ok = await deleteFocusHook(hookId, doctor.focus_token || undefined);
       if (ok) {
         toast.success("Gatilho removido com sucesso!");
         setHooks((prev) => prev.filter((h) => h.id !== hookId));

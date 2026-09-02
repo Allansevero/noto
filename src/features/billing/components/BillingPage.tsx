@@ -6,7 +6,7 @@ import { PlanCardsGrid } from "./PlanCardsGrid";
 import { InvoicesHistoryTable } from "./InvoicesHistoryTable";
 import { UpgradePlanDialog } from "./UpgradePlanDialog";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, CreditCard, Sparkles, ShieldCheck } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 export function BillingPage() {
@@ -15,7 +15,6 @@ export function BillingPage() {
     subscription,
     invoices,
     quota,
-    isLoading,
     refetch,
   } = useSubscription();
 

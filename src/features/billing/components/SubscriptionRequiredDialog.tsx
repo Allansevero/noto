@@ -9,7 +9,6 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   Lock,
-  Unlock,
   Check,
   ShieldAlert,
   ArrowRight,

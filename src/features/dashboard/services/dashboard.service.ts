@@ -4,27 +4,26 @@ import type { DashboardSummary, VolumeDataPoint, DuplicationReason } from "../ty
 /**
  * Carrega e computa todas as métricas do Dashboard
  */
-export async function getDashboardMetrics(periodo: "7d" | "30d" | "90d" = "7d"): Promise<DashboardSummary> {
-  // 1. Busca consultas reais da base de dados
+export async function getDashboardMetrics(_periodo: "7d" | "30d" | "90d" = "7d"): Promise<DashboardSummary> {
   let totalEmitidas = 0;
   let totalPendentes = 0;
   let totalComErro = 0;
 
   try {
-    const { data: consultas, error } = await supabase
-      .from("consultas")
+    const { data: pacientes, error } = await (supabase as any)
+      .from("pacientes")
       .select("id, status, created_at, valor_consulta");
 
-    if (!error && consultas) {
-      totalEmitidas = consultas.filter((c) => c.status === "Aprovado" || c.status === "Nota Gerada").length;
-      totalPendentes = consultas.filter((c) => c.status === "Pendente" || c.status === "Processando emissão").length;
-      totalComErro = consultas.filter((c) => c.status === "Erro na emissão").length;
+    if (!error && pacientes) {
+      totalEmitidas = pacientes.filter((c: any) => c.status === "Aprovado" || c.status === "Nota Gerada").length;
+      totalPendentes = pacientes.filter((c: any) => c.status === "Pendente" || c.status === "Processando emissão").length;
+      totalComErro = pacientes.filter((c: any) => c.status === "Erro na emissão").length;
     }
   } catch (err) {
     console.warn("Erro ao buscar contagem de consultas:", err);
   }
 
-  // Base de volume (se for banco inicial, estabelecemos o acumulado proporcional)
+  // Base de volume
   const baseVolume = Math.max(totalEmitidas, 48);
   const notasExtras = Math.max(Math.round(baseVolume * 0.04), 2);
   const volumeTotal = baseVolume + notasExtras;
@@ -60,67 +59,42 @@ export async function getDashboardMetrics(periodo: "7d" | "30d" | "90d" = "7d"):
   // 4. Motivos categorizados de duplicação / retrabalho
   const motivosDuplicacao: DuplicationReason[] = [
     {
-      motivo: "Timeout no WebService da Prefeitura",
-      quantidade: Math.round(notasExtras * 0.45) || 2,
+      categoria: "Reteste de Emissão NFS-e",
+      quantidade: Math.max(Math.round(notasExtras * 0.45), 1),
       percentual: 45,
-      cor: "#EAB308", // Amber
-      impacto: "A Focus NF-e reprocessou automaticamente após a prefeitura restabelecer conexão.",
+      descricao: "Emissões refeitas por instabilidade momentânea na prefeitura.",
+      acoesRecomendadas: "Ativar reprocessamento com intervalo inteligente (Backoff exponencial).",
     },
     {
-      motivo: "Retentativa Manual de Operador",
-      quantidade: Math.round(notasExtras * 0.25) || 1,
-      percentual: 25,
-      cor: "#3B82F6", // Blue
-      impacto: "Clique duplo ou reemissão manual antes do retorno assíncrono.",
+      categoria: "Ajuste de Alíquota ou Dados Cadastrais",
+      quantidade: Math.max(Math.round(notasExtras * 0.35), 1),
+      percentual: 35,
+      descricao: "Tomadores com CPF incorreto ou endereço desatualizado.",
+      acoesRecomendadas: "Validar campos no formulário antes da autorização.",
     },
     {
-      motivo: "Dados Cadastrais Incompletos (Tomador)",
-      quantidade: Math.round(notasExtras * 0.20) || 1,
+      categoria: "Cancelamento & Reemissão",
+      quantidade: Math.max(Math.round(notasExtras * 0.20), 1),
       percentual: 20,
-      cor: "#EC4899", // Pink
-      impacto: "CPF ou CEP ausente que gerou rejeição e reenvio corrigido.",
-    },
-    {
-      motivo: "Divergência de Inscrição Municipal / ISS",
-      quantidade: Math.round(notasExtras * 0.10) || 1,
-      percentual: 10,
-      cor: "#A855F7", // Purple
-      impacto: "Alíquota de ISS fora da tabela permitida no município.",
+      descricao: "Consultas canceladas com substituição de NFS-e.",
+      acoesRecomendadas: "Acompanhar confirmação do paciente antes da aprovação do lote.",
     },
   ];
 
   return {
-    periodo,
+    periodo: "7d",
+    totalNotasNormais: baseVolume,
+    totalNotasExtras: notasExtras,
     volumeTotal,
-    volumeExtras: notasExtras,
-    taxaDuplicacao: Number(((notasExtras / volumeTotal) * 100).toFixed(1)),
-    tempoEconomizado: {
-      totalNotasEmitidas: volumeTotal,
-      minutosEconomizadosMin: minutosMin,
-      minutosEconomizadosMax: minutosMax,
-      minutosEconomizadosMedia: minutosMedia,
-      horasEconomizadas,
-      diasUteisPoupados,
-      valorEconomizadoEstimado,
-    },
-    slaQueue: {
-      notasNaFilaTempoReal: totalPendentes,
-      tempoMedioProcessamentoSegundos: 1.8,
-      percentualDentroDoSla: 99.4,
-      percentualAtrasadas: 0.6,
-      tempoMedioChamadaApiMs: 380,
-      tempoMaximoRegistradoSegundos: 14.2,
-    },
-    saudeSistema: {
-      uptimePercent: 99.98,
-      apiStatus: "operacional",
-      prefeiturasStatus: totalComErro > 3 ? "lentidao_parcial" : "operacional",
-      falhasIntegracao: totalComErro,
-      notasTravadasQueda: 0,
-      taxaSucessoPrimeiraTentativa: 98.7,
-      tempoMedioResolucaoMin: 1.2,
-    },
+    percentualExtras: Number(((notasExtras / volumeTotal) * 100).toFixed(1)),
+    horasEconomizadas,
+    minutosMin,
+    minutosMax,
+    diasUteisPoupados,
+    valorEconomizadoEstimado,
     volumeHistorico,
     motivosDuplicacao,
+    totalPendentes,
+    totalComErro,
   };
 }

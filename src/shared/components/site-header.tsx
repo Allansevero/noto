@@ -37,7 +37,7 @@ export function SiteHeader({ pageTitle = "Pacientes", onLogout }: SiteHeaderProp
   const [isSendingBug, setIsSendingBug] = useState(false);
 
   // Hook de controle de tema Black / White
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
 
   // Busca a lista de médicos para exibir os avatares no header e alimentar a busca inteligente
   const { allDoctors } = useDoctors();

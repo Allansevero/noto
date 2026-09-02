@@ -74,7 +74,7 @@ export async function validateAndUploadCertificate(
     logradouro: doctor.endereco?.logradouro || "Rua Principal",
     numero: numParsed,
     municipio: cleanCidade,
-    codigo_municipio: cleanDigits(doctor.codigo_municipio_ibge) || (cleanCidade.toLowerCase().includes("porto alegre") ? "4314902" : undefined),
+    codigo_municipio: cleanDigits(doctor.codigo_municipio_ibge ?? undefined) || (cleanCidade.toLowerCase().includes("porto alegre") ? "4314902" : undefined),
     uf: cleanUf,
     regime_tributario: doctor.optante_simples_nacional ? 1 : 3,
     telefone: cleanDigits(doctor.telefone) || "51999999999",
@@ -187,7 +187,8 @@ export async function syncDoctorWithFocusNfe(
 ): Promise<SyncFocusResponse> {
   const cleanDigits = (str?: string) => (str ? str.replace(/\D/g, "") : "");
 
-  const isHomologacao = (params?.ambiente || doctor.ambiente_nf || "homologacao") === "homologacao";
+  // isHomologacao: kept for future use when endpoint differs per environment
+  void ((params?.ambiente || doctor.ambiente_nf || "homologacao") === "homologacao");
   const isBrowser = typeof window !== "undefined";
 
   const token =
@@ -225,7 +226,7 @@ export async function syncDoctorWithFocusNfe(
     logradouro: doctor.endereco?.logradouro || "Rua Principal",
     numero: numParsed,
     municipio: cleanCidade,
-    codigo_municipio: cleanDigits(doctor.codigo_municipio_ibge) || (cleanCidade.toLowerCase().includes("porto alegre") ? "4314902" : undefined),
+    codigo_municipio: cleanDigits(doctor.codigo_municipio_ibge ?? undefined) || (cleanCidade.toLowerCase().includes("porto alegre") ? "4314902" : undefined),
     uf: cleanUf,
     regime_tributario: params?.regimeTributario ?? (doctor.optante_simples_nacional ? 1 : 3),
     telefone: telefoneDigits || "51999999999",

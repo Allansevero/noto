@@ -15,7 +15,7 @@ export async function fetchInvoices(): Promise<Invoice[]> {
   ).toISOString();
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from(TABLE)
       .select("*, pacientes(id, nome_completo, cpf, email, telefone), medicos(id, nome_completo, cnpj, crm, foto_perfil)")
       .gte("created_at", ninetyDaysAgo)
@@ -47,9 +47,9 @@ export async function saveInvoiceRecord(record: Partial<Invoice>): Promise<Invoi
       data_expiracao: ninetyDaysFuture,
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from(TABLE)
-      .upsert(payload as any, { onConflict: "focus_ref" })
+      .upsert(payload, { onConflict: "focus_ref" })
       .select()
       .maybeSingle();
 
@@ -71,13 +71,13 @@ export async function updateInvoiceStatus(
   updates: Partial<Invoice> = {}
 ): Promise<void> {
   try {
-    await supabase
+    await (supabase as any)
       .from(TABLE)
       .update({
         status,
         ...updates,
         updated_at: new Date().toISOString(),
-      } as any)
+      })
       .eq("focus_ref", focusRef);
   } catch (err) {
     console.warn("Erro ao atualizar status da nota fiscal:", err);

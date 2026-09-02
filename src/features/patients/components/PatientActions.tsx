@@ -31,7 +31,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Calendar,
-  Lock,
 } from "lucide-react";
 
 interface PatientActionsProps {

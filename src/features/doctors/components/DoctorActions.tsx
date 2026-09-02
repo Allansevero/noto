@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Pencil, Trash2, Archive, ArchiveRestore, FileText } from "lucide-react";
+import { Pencil, Trash2, Archive, ArchiveRestore } from "lucide-react";
 import type { Doctor } from "../types";
 
 interface DoctorActionsProps {
@@ -29,14 +29,13 @@ export function DoctorActions({
   onDelete,
   onArchive,
   onUnarchive,
-  onConfigureFocus,
+  onConfigureFocus: _onConfigureFocus,
 }: DoctorActionsProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
 
   const isArchived = doctor.status === "Arquivado";
-  const isFocusConnected = Boolean(doctor.focus_empresa_id || doctor.focus_token);
 
   const handleDelete = async () => {
     setIsBusy(true);

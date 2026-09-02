@@ -218,7 +218,7 @@ const INTEGRATION_APPS: IntegrationApp[] = [
 
 export function SettingsPage({ initialTab = "conta" }: SettingsPageProps) {
   const { session } = useAuth();
-  const { subscription } = useSubscription();
+  useSubscription();
 
   const [activeTab, setActiveTab] = useState<"conta" | "plano" | "integracoes">(initialTab);
 
@@ -286,6 +286,8 @@ export function SettingsPage({ initialTab = "conta" }: SettingsPageProps) {
             <span className="capitalize">
               {activeTab === "conta"
                 ? "Dados da Conta"
+                : (activeTab as string) === "plano"
+                ? "Meu Plano & Cobrança"
                 : "Integrações & Conectores"}
             </span>
           </div>
@@ -293,18 +295,18 @@ export function SettingsPage({ initialTab = "conta" }: SettingsPageProps) {
           {/* Abas Rápidas no Header */}
           <div className="flex items-center gap-1">
             <Button
-              variant={activeTab === "conta" ? "default" : "ghost"}
+              variant={(activeTab as string) === "conta" ? "default" : "ghost"}
               size="sm"
               onClick={() => setActiveTab("conta")}
               className={`h-7 text-xs rounded-none ${
-                activeTab === "conta" ? "bg-[#B7F20B] text-black font-semibold" : ""
+                (activeTab as string) === "conta" ? "bg-[#B7F20B] text-black font-semibold" : ""
               }`}
             >
               <UserRound className="h-3 w-3 mr-1" />
               Conta
             </Button>
             <Button
-              variant={activeTab === "plano" ? "default" : "ghost"}
+              variant={(activeTab as string) === "plano" ? "default" : "ghost"}
               size="sm"
               onClick={() => setActiveTab("plano")}
               className="h-7 text-xs rounded-none"
@@ -313,11 +315,11 @@ export function SettingsPage({ initialTab = "conta" }: SettingsPageProps) {
               Meu Plano
             </Button>
             <Button
-              variant={activeTab === "integracoes" ? "default" : "ghost"}
+              variant={(activeTab as string) === "integracoes" ? "default" : "ghost"}
               size="sm"
               onClick={() => setActiveTab("integracoes")}
               className={`h-7 text-xs rounded-none ${
-                activeTab === "integracoes" ? "bg-[#B7F20B] text-black font-semibold" : ""
+                (activeTab as string) === "integracoes" ? "bg-[#B7F20B] text-black font-semibold" : ""
               }`}
             >
               <Webhook className="h-3 w-3 mr-1" />

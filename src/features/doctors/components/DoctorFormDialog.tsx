@@ -28,7 +28,6 @@ import { useCreateDoctor } from "../hooks/useCreateDoctor";
 import { updateDoctor as updateDoctorRepo } from "../doctors.repository";
 import { isValidCNPJ } from "@/shared/utils/validators";
 import {
-  Building2,
   ArrowRight,
   ArrowLeft,
   Loader2,
@@ -87,7 +86,7 @@ interface DoctorFormDialogProps {
   onSuccess: (doctor: Doctor) => void;
   doctorToEdit?: Doctor | null;
   onNavigateToPatients?: () => void;
-  onNavigateToInvoices?: () => void;
+  onNavigateToInvoices?: (createdDoc?: Doctor) => void;
 }
 
 export function DoctorFormDialog({

@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
-import type { Plan, Subscription, BillingInvoice, PlanId } from "./types";
+import type { Plan, Subscription, BillingInvoice } from "./types";
 import { DEFAULT_PLANS } from "./constants";
 
 const PLANS_TABLE = "planos";
@@ -17,7 +17,7 @@ export const CHECKOUT_URLS: Record<string, string> = {
  */
 export async function getPlans(): Promise<Plan[]> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from(PLANS_TABLE)
       .select("*")
       .order("ordem", { ascending: true });
@@ -48,7 +48,7 @@ export async function getActiveSubscription(): Promise<Subscription | null> {
     const { data: authData } = await supabase.auth.getUser();
     const currentUserId = authData?.user?.id;
 
-    let query = supabase
+    let query = (supabase as any)
       .from(SUBSCRIPTIONS_TABLE)
       .select("*, planos(*)")
       .order("created_at", { ascending: false });
@@ -91,7 +91,7 @@ export async function getActiveSubscription(): Promise<Subscription | null> {
  */
 export async function getBillingInvoices(): Promise<BillingInvoice[]> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from(INVOICES_TABLE)
       .select("*")
       .order("data_emissao", { ascending: false });

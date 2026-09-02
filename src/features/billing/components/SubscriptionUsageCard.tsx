@@ -2,7 +2,6 @@ import type { Subscription, UsageQuota } from "../types";
 import { formatMoney } from "../services/billing.service";
 import { Button } from "@/components/ui/button";
 import {
-  CreditCard,
   Calendar,
   Building2,
   FileText,

@@ -1,6 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
 import { DEFAULT_FOCUS_TOKEN, FOCUS_HOMOLOGACAO_TOKEN } from "@/features/doctors/services/focusNfe.service";
-import type { Patient } from "../types";
 
 export interface NfseEmissionResult {
   success: boolean;
@@ -20,7 +19,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
   const cleanDigits = (val?: string | null) => (val ? val.replace(/\D/g, "") : "");
 
   // 1. Busca os dados do paciente e do médico vinculado
-  const { data: patient, error: patientErr } = await supabase
+  const { data: patient, error: patientErr } = await (supabase as any)
     .from("pacientes")
     .select("*, medicos(*)")
     .eq("id", patientId)
@@ -222,7 +221,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
  * Consulta o status da NFS-e Nacional na Focus NF-e (/v2/nfsen/{ref} ou /v2/nfse/{ref})
  */
 export async function checkNfseStatus(patientId: string): Promise<NfseEmissionResult> {
-  const { data: patient, error: patientErr } = await supabase
+  const { data: patient, error: patientErr } = await (supabase as any)
     .from("pacientes")
     .select("*, medicos(*)")
     .eq("id", patientId)
@@ -363,7 +362,7 @@ export async function syncPendingInvoices(): Promise<number> {
  * Cancela uma NFS-e na Focus NF-e (DELETE /v2/nfsen/{ref} ou /v2/nfse/{ref})
  */
 export async function cancelNfseFocus(patientId: string, justificativa: string): Promise<NfseEmissionResult> {
-  const { data: patient, error: patientErr } = await supabase
+  const { data: patient, error: patientErr } = await (supabase as any)
     .from("pacientes")
     .select("*, medicos(*)")
     .eq("id", patientId)

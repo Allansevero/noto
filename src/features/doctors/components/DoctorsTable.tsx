@@ -442,7 +442,7 @@ export function DoctorsTable({ onOpenNewDoctor, onOpenDoctorSettings }: DoctorsT
                         onDelete={deleteDoctor}
                         onArchive={archiveDoctor}
                         onUnarchive={unarchiveDoctor}
-                        onConfigureFocus={(doc) => {
+                        onConfigureFocus={(doc: Doctor) => {
                           if (onOpenDoctorSettings) {
                             onOpenDoctorSettings(doc);
                           } else {

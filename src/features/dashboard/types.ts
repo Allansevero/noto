@@ -7,12 +7,15 @@ export interface VolumeDataPoint {
 }
 
 export interface DuplicationReason {
-  motivo: string;
+  categoria?: string;
+  descricao?: string;
+  acoesRecomendadas?: string;
+  motivo?: string;
   quantidade: number;
   percentual: number;
-  cor: string;
+  cor?: string;
   icone?: string;
-  impacto: string;
+  impacto?: string;
 }
 
 export interface TimeSavedMetrics {
@@ -46,12 +49,22 @@ export interface SystemHealthMetrics {
 
 export interface DashboardSummary {
   periodo: "7d" | "30d" | "90d" | "ano";
+  totalNotasNormais?: number;
+  totalNotasExtras?: number;
   volumeTotal: number;
-  volumeExtras: number;
-  taxaDuplicacao: number;
-  tempoEconomizado: TimeSavedMetrics;
-  slaQueue: SlaQueueMetrics;
-  saudeSistema: SystemHealthMetrics;
+  percentualExtras?: number;
+  horasEconomizadas?: number;
+  minutosMin?: number;
+  minutosMax?: number;
+  diasUteisPoupados?: number;
+  valorEconomizadoEstimado?: number;
+  volumeExtras?: number;
+  taxaDuplicacao?: number;
+  tempoEconomizado?: TimeSavedMetrics;
+  slaQueue?: SlaQueueMetrics;
+  saudeSistema?: SystemHealthMetrics;
   volumeHistorico: VolumeDataPoint[];
   motivosDuplicacao: DuplicationReason[];
+  totalPendentes?: number;
+  totalComErro?: number;
 }

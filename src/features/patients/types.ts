@@ -4,10 +4,12 @@ export type PatientStatus =
   | 'Processando emissão' 
   | 'Nota Gerada' 
   | 'Erro na emissão' 
-  | 'Cancelado';
+  | 'Cancelado'
+  | 'Nota Cancelada';
 
 export interface Patient {
   id: string;
+  user_id?: string | null;
   medico_id?: string;
   nome_completo: string;
   email: string;
@@ -15,6 +17,7 @@ export interface Patient {
   telefone: string;
   valor_consulta: number;
   status: PatientStatus;
+  data_consulta?: string | null;
   data_criacao: string;
   data_pagamento?: string | null;
   data_nota_gerada?: string | null;
@@ -24,4 +27,5 @@ export interface Patient {
   nfse_xml_url?: string | null;
   nfse_erro_motivo?: string | null;
   nfse_data_emissao?: string | null;
+  created_at?: string | null;
 }

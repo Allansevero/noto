@@ -3,15 +3,11 @@ import { usePatients } from "@/features/patients/hooks/usePatients";
 import { useDoctors } from "@/features/doctors/hooks/useDoctors";
 import { formatCurrency } from "@/shared/utils";
 import {
-  BarChart3,
   Receipt,
   TrendingUp,
   Percent,
   CheckCircle2,
-  Calendar,
   Stethoscope,
-  ArrowUpRight,
-  ShieldCheck,
 } from "lucide-react";
 
 export function InvoiceMetricsPage() {

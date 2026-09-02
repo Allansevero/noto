@@ -21,7 +21,7 @@ export function DoctorsPage({ onNavigateToPatients }: DoctorsPageProps) {
   const totalPatientsServed = allDoctors.reduce((acc, d) => acc + (d.total_pacientes || 0), 0);
   const uniqueSpecialties = new Set(allDoctors.map((d) => d.especialidade).filter(Boolean)).size;
 
-  const handleDoctorCreated = (doctor: Doctor) => {
+  const handleDoctorCreated = () => {
     // Atualização já tratada via Supabase Realtime
   };
 

@@ -114,7 +114,7 @@ export function usePatients(medicoId?: string) {
       setTimeout(async () => {
         try {
           const { checkNfseStatus } = await import('../services/nfseEmission.service');
-          const checkRes = await checkNfseStatus(patientId);
+          void (await checkNfseStatus(patientId));
           if (isMounted.current) {
             fetchPatients(false);
           }

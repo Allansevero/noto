@@ -10,13 +10,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Receipt,
   CheckCircle2,
   Clock,
   AlertCircle,
   Copy,
   Download,
-  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 

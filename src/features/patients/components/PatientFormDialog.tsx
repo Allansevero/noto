@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { isValidCPF } from '@/shared/utils/validators';
 import { useCreatePatient } from '../hooks/useCreatePatient';
 import { useDoctors } from '@/features/doctors/hooks/useDoctors';
-import { MaskedInput } from '@/shared/components/MaskedInput';
 import { BrazilPhoneInput } from '@/shared/components/BrazilPhoneInput';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,7 +33,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Stethoscope, FileText, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { AlertCircle, Stethoscope, CheckCircle2, Loader2 } from 'lucide-react';
 import type { Patient } from '../types';
 
 const schema = z.object({

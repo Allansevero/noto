@@ -1,7 +1,7 @@
 import type { Plan, PlanId } from "../types";
 import { formatMoney } from "../services/billing.service";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Building2, FileText, ArrowRight, Zap } from "lucide-react";
+import { Check, ArrowRight } from "lucide-react";
 
 interface PlanCardsGridProps {
   plans: Plan[];

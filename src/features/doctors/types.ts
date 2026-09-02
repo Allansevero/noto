@@ -38,6 +38,7 @@ export interface Doctor {
   emissora?: string;
   // Campos Fiscais Focus NFe
   focus_empresa_id?: string | null;
+  focus_token?: string | null;
   ambiente_nf?: AmbienteNf;
   item_lista_servico?: string | null;
   aliquota_iss?: number | null;
@@ -67,6 +68,8 @@ export interface CreateDoctorInput {
   status?: DoctorStatus;
   emissora?: string;
   // Campos Fiscais Focus NFe
+  focus_empresa_id?: string | null;
+  focus_token?: string | null;
   ambiente_nf?: AmbienteNf;
   item_lista_servico?: string;
   aliquota_iss?: number;

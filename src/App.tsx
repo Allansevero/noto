@@ -9,8 +9,7 @@ import { BillingPage } from "@/features/billing/components/BillingPage";
 import { SettingsPage } from "@/features/settings/components/SettingsPage";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Stethoscope, Users, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
-import type { Doctor } from "@/features/doctors/types";
+import { UserPlus, Users, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { LoginForm } from "@/features/auth/components/LoginForm";
@@ -159,7 +158,7 @@ function App() {
     setIsDoctorFormOpen(true);
   };
 
-  const handleDoctorCreated = (_doctor: Doctor) => {
+  const handleDoctorCreated = () => {
     // Atualização realtime
   };
 

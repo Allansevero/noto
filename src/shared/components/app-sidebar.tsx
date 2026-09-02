@@ -11,7 +11,6 @@ import {
   PanelLeftOpen,
   LogOut,
   UserRound,
-  ShieldCheck,
   Webhook,
   Receipt,
   FolderKanban,
