@@ -70,6 +70,10 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
   // Data no formato aceito pelo SPED da NFS-e Nacional
   const dataEmissaoComFuso = `${dataEmissaoLocal}-03:00`;
 
+  // Código do município IBGE configurado para o médico
+  const doctorIbge = cleanDigits(doctor?.codigo_municipio_ibge ?? (doctor?.endereco as any)?.codigo_municipio_ibge ?? undefined);
+  const doctorIbgeInt = doctorIbge ? parseInt(doctorIbge, 10) : undefined;
+
   // Payload oficial da DPS Nacional (SPED)
   const payloadNacional: Record<string, unknown> = {
     data_emissao: dataEmissaoComFuso,
@@ -77,13 +81,13 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
     numero_dps: Math.floor(1000 + Math.random() * 9000),
     data_competencia: dataCompetencia,
     emitente_dps: "1",
-    codigo_municipio_emissora: parseInt(doctor?.codigo_municipio_ibge || "4314902", 10),
+    codigo_municipio_emissora: doctorIbgeInt,
     cnpj_prestador: cleanCnpj || "55067216000166",
     codigo_opcao_simples_nacional: isOptanteSimples ? "3" : "1", // 1 = Não Optante
     regime_especial_tributacao: "0",
     cpf_tomador: cleanCpfTomador || "11111111111",
     razao_social_tomador: patient.nome_completo,
-    codigo_municipio_prestacao: parseInt(doctor?.codigo_municipio_ibge || "4314902", 10),
+    codigo_municipio_prestacao: doctorIbgeInt,
     codigo_tributacao_nacional_iss: doctor?.item_lista_servico?.replace(/\D/g, "") || "041601",
     codigo_nbs: "1.2301.13.00",
     descricao_servico: `REFERENTE 1 CONSULTA EM PSIQUIATRA: DRA ALICE XAVIER CRM${doctor?.crm || '36948'} - REALIZADA NA DATA ${dataConsultaFormatada} - PACIENTE: ${patient.nome_completo}`,
@@ -136,7 +140,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
         prestador: {
           cnpj: cleanCnpj,
           inscricao_municipal: doctor?.inscricao_municipal || undefined,
-          codigo_municipio: doctor?.codigo_municipio_ibge || "4314902",
+          codigo_municipio: doctorIbge || undefined,
         },
         tomador: {
           cpf: cleanCpfTomador || undefined,
@@ -150,7 +154,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
           item_lista_servico: doctor?.item_lista_servico?.replace(/\D/g, "") || "0401",
           discriminacao: `REFERENTE 1 CONSULTA EM PSIQUIATRA: DRA ALICE XAVIER CRM${doctor?.crm || '36948'} - REALIZADA NA DATA ${dataConsultaFormatada} - PACIENTE: ${patient.nome_completo}`,
           codigo_tributario_municipio: doctor?.codigo_tributario_municipio || undefined,
-          codigo_municipio: doctor?.codigo_municipio_ibge || "4314902",
+          codigo_municipio: doctorIbge || undefined,
           iss_retido: false,
         },
       };
@@ -205,7 +209,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
               prestador: {
                 cnpj: cleanCnpj,
                 inscricao_municipal: doctor?.inscricao_municipal || undefined,
-                codigo_municipio: doctor?.codigo_municipio_ibge || "4314902",
+                codigo_municipio: doctorIbge || undefined,
               },
               tomador: {
                 cpf: cleanCpfTomador || undefined,

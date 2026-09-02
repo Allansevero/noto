@@ -54,16 +54,17 @@ export async function validateAndUploadCertificate(
   const cepDigits = cleanDigits(doctor.endereco?.cep);
   const cepParsed = cepDigits ? parseInt(cepDigits, 10) : 80010000;
 
-  const rawCidade = doctor.endereco?.cidade || "Porto Alegre";
-  const cleanCidade = rawCidade.replace(/\s*-\s*\d+$/, "").replace(/\s*\/\s*[A-Za-z]{2}$/, "").trim() || "Porto Alegre";
-  const cleanUf = (doctor.endereco?.uf || "RS").toUpperCase().slice(0, 2);
+  const rawCidade = doctor.endereco?.cidade || "";
+  const cleanCidade = rawCidade.replace(/\s*-\s*\d+$/, "").replace(/\s*\/\s*[A-Za-z]{2}$/, "").trim();
+  const cleanUf = (doctor.endereco?.uf || "").toUpperCase().slice(0, 2);
+  const cleanIbge = cleanDigits(doctor.codigo_municipio_ibge ?? (doctor.endereco as any)?.codigo_municipio_ibge ?? undefined);
 
   // Monta a requisição com o schema EmpresaCreate da OpenAPI oficial
   const payload: Record<string, unknown> = {
     nome: doctor.razao_social || doctor.nome_completo,
     nome_fantasia: doctor.nome_fantasia || doctor.razao_social || doctor.nome_completo,
     bairro: doctor.endereco?.bairro || "Centro",
-    cep: isNaN(cepParsed) ? 80010000 : cepParsed,
+    cep: isNaN(cepParsed) ? undefined : cepParsed,
     discrimina_impostos: Boolean(doctor.optante_simples_nacional),
     email: doctor.email || `${(doctor.nome || "medico").toLowerCase().replace(/\s+/g, '')}@clinica.com`,
     enviar_email_destinatario: true,
@@ -73,11 +74,11 @@ export async function validateAndUploadCertificate(
     mostrar_danfse_badge: true,
     logradouro: doctor.endereco?.logradouro || "Rua Principal",
     numero: numParsed,
-    municipio: cleanCidade,
-    codigo_municipio: cleanDigits(doctor.codigo_municipio_ibge ?? undefined) || (cleanCidade.toLowerCase().includes("porto alegre") ? "4314902" : undefined),
-    uf: cleanUf,
+    municipio: cleanCidade || undefined,
+    codigo_municipio: cleanIbge || undefined,
+    uf: cleanUf || undefined,
     regime_tributario: doctor.optante_simples_nacional ? 1 : 3,
-    telefone: cleanDigits(doctor.telefone) || "51999999999",
+    telefone: cleanDigits(doctor.telefone) || undefined,
     arquivo_certificado_base64: certificateBase64,
     senha_certificado: password,
     certificado_especifico: true,
@@ -205,16 +206,17 @@ export async function syncDoctorWithFocusNfe(
 
   const isOptanteSimples = (params?.regimeTributario ?? (doctor.optante_simples_nacional ? 1 : 3)) !== 3;
 
-  const rawCidade = doctor.endereco?.cidade || "Porto Alegre";
-  const cleanCidade = rawCidade.replace(/\s*-\s*\d+$/, "").replace(/\s*\/\s*[A-Za-z]{2}$/, "").trim() || "Porto Alegre";
-  const cleanUf = (doctor.endereco?.uf || "RS").toUpperCase().slice(0, 2);
+  const rawCidade = doctor.endereco?.cidade || "";
+  const cleanCidade = rawCidade.replace(/\s*-\s*\d+$/, "").replace(/\s*\/\s*[A-Za-z]{2}$/, "").trim();
+  const cleanUf = (doctor.endereco?.uf || "").toUpperCase().slice(0, 2);
+  const cleanIbge = cleanDigits(doctor.codigo_municipio_ibge ?? (doctor.endereco as any)?.codigo_municipio_ibge ?? undefined);
 
   // Monta o payload conforme a documentação oficial da Focus NF-e (EmpresaCreate)
   const payload: Record<string, unknown> = {
     nome: doctor.razao_social || doctor.nome_completo,
     nome_fantasia: doctor.nome_fantasia || doctor.razao_social || doctor.nome_completo,
     bairro: doctor.endereco?.bairro || "Centro",
-    cep: isNaN(cepParsed) ? 80010000 : cepParsed,
+    cep: isNaN(cepParsed) ? undefined : cepParsed,
     complemento: doctor.endereco?.complemento || undefined,
     discrimina_impostos: isOptanteSimples,
     email: doctor.email || `${(doctor.nome || "medico").toLowerCase().replace(/\s+/g, '')}@clinica.com`,
@@ -225,11 +227,11 @@ export async function syncDoctorWithFocusNfe(
     mostrar_danfse_badge: true,
     logradouro: doctor.endereco?.logradouro || "Rua Principal",
     numero: numParsed,
-    municipio: cleanCidade,
-    codigo_municipio: cleanDigits(doctor.codigo_municipio_ibge ?? undefined) || (cleanCidade.toLowerCase().includes("porto alegre") ? "4314902" : undefined),
-    uf: cleanUf,
+    municipio: cleanCidade || undefined,
+    codigo_municipio: cleanIbge || undefined,
+    uf: cleanUf || undefined,
     regime_tributario: params?.regimeTributario ?? (doctor.optante_simples_nacional ? 1 : 3),
-    telefone: telefoneDigits || "51999999999",
+    telefone: telefoneDigits || undefined,
   };
 
   if (params?.arquivoCertificadoBase64) {

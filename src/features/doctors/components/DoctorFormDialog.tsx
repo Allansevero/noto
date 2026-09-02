@@ -137,9 +137,9 @@ export function DoctorFormDialog({
       numero: "",
       complemento: "",
       bairro: "",
-      cidade: "Porto Alegre",
-      uf: "RS",
-      codigo_municipio_ibge: "4314902",
+      cidade: "",
+      uf: "",
+      codigo_municipio_ibge: "",
       email_empresa: "",
       item_lista_servico: "041601",
       aliquota_iss: 2.0,
@@ -171,9 +171,9 @@ export function DoctorFormDialog({
         numero: doctorToEdit.endereco?.numero || "",
         complemento: doctorToEdit.endereco?.complemento || "",
         bairro: doctorToEdit.endereco?.bairro || "",
-        cidade: doctorToEdit.endereco?.cidade || "Porto Alegre",
-        uf: doctorToEdit.endereco?.uf || "RS",
-        codigo_municipio_ibge: (doctorToEdit as any).codigo_municipio_ibge || "4314902",
+        cidade: doctorToEdit.endereco?.cidade || "",
+        uf: doctorToEdit.endereco?.uf || "",
+        codigo_municipio_ibge: (doctorToEdit as any).codigo_municipio_ibge || "",
         email_empresa: doctorToEdit.email || "",
         item_lista_servico: doctorToEdit.item_lista_servico || "041601",
         aliquota_iss: doctorToEdit.aliquota_iss || 2.0,
@@ -198,9 +198,9 @@ export function DoctorFormDialog({
         numero: "",
         complemento: "",
         bairro: "",
-        cidade: "Porto Alegre",
-        uf: "RS",
-        codigo_municipio_ibge: "4314902",
+        cidade: "",
+        uf: "",
+        codigo_municipio_ibge: "",
         email_empresa: "",
         item_lista_servico: "041601",
         aliquota_iss: 2.0,
@@ -330,8 +330,8 @@ export function DoctorFormDialog({
                 numero: values.numero ?? "",
                 complemento: values.complemento,
                 bairro: values.bairro ?? "",
-                cidade: values.cidade ?? "Porto Alegre",
-                uf: values.uf ?? "RS",
+                cidade: values.cidade ?? "",
+                uf: values.uf ?? "",
               }
             : doctorToEdit.endereco,
         });
@@ -373,7 +373,7 @@ export function DoctorFormDialog({
       item_lista_servico: values.item_lista_servico || "041601",
       aliquota_iss: values.aliquota_iss || 2.0,
       codigo_tributario_municipio: values.item_lista_servico || "041601",
-      codigo_municipio_ibge: values.codigo_municipio_ibge || "4314902",
+      codigo_municipio_ibge: values.codigo_municipio_ibge || "",
       arquivoCertificadoBase64: certBase64 || undefined,
       senhaCertificado: certPassword || undefined,
       endereco: values.cep
@@ -383,8 +383,8 @@ export function DoctorFormDialog({
             numero: values.numero ?? "",
             complemento: values.complemento,
             bairro: values.bairro ?? "",
-            cidade: values.cidade ?? "Porto Alegre",
-            uf: values.uf ?? "RS",
+            cidade: values.cidade ?? "",
+            uf: values.uf ?? "",
           }
         : undefined,
       status: "Ativo",
@@ -862,6 +862,66 @@ export function DoctorFormDialog({
                                 {...field}
                               />
                             </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Cidade, UF e Código IBGE — editáveis manualmente */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                      <FormField
+                        control={form.control}
+                        name="cidade"
+                        render={({ field }) => (
+                          <FormItem className="sm:col-span-1">
+                            <FormLabel className="text-xs font-medium">Cidade do Prestador</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Ex: Belo Horizonte"
+                                className="h-9 text-xs rounded-none"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="uf"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-medium">UF</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Ex: MG"
+                                maxLength={2}
+                                className="h-9 text-xs font-mono uppercase rounded-none"
+                                {...field}
+                                onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="codigo_municipio_ibge"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-medium">Código IBGE do Município</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Ex: 3106200"
+                                className="h-9 text-xs font-mono rounded-none"
+                                {...field}
+                              />
+                            </FormControl>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              Preenchido automaticamente pelo XML
+                            </p>
                             <FormMessage />
                           </FormItem>
                         )}
