@@ -32,10 +32,13 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
   const doctor = patient.medicos;
   const isHomologacao = (doctor?.ambiente_nf || "producao") === "homologacao";
 
-  // Usa o token de homologação oficial quando em modo homologação
+  // SEMPRE usa o token master para emissão — o doctor.focus_token é um token de empresa
+  // que a Focus retorna mas que NÃO tem permissão para emitir notas.
+  // Apenas o token master (VITE_FOCUS_MASTER_TOKEN) autoriza emissão de qualquer empresa vinculada.
+  const masterToken = import.meta.env.VITE_FOCUS_MASTER_TOKEN || DEFAULT_FOCUS_TOKEN;
   const token = isHomologacao
     ? (import.meta.env.VITE_FOCUS_HOMOLOGACAO_TOKEN || FOCUS_HOMOLOGACAO_TOKEN)
-    : (doctor?.focus_token || import.meta.env.VITE_FOCUS_NFE_TOKEN || DEFAULT_FOCUS_TOKEN);
+    : masterToken;
 
   const isBrowser = typeof window !== "undefined";
 
@@ -173,6 +176,11 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
 
     // Fallback 2: Se retornar 403 (CNPJ não vinculado/autorizado na Focus), tenta registrar a empresa na Focus e re-emitir
     if (response.status === 403 && cleanCnpj) {
+      // Log detalhado do que a Focus retornou para diagnóstico
+      console.error("[Focus NF-e 403] Resposta completa:", JSON.stringify(data));
+      console.error("[Focus NF-e 403] Token usado (primeiros 8 chars):", cleanToken.slice(0, 8));
+      console.error("[Focus NF-e 403] CNPJ prestador:", cleanCnpj);
+      console.error("[Focus NF-e 403] URL:", endpointUrl);
       try {
         const { syncDoctorWithFocusNfe } = await import("@/features/doctors/services/focusNfe.service");
         const syncRes = await syncDoctorWithFocusNfe(doctor, {
