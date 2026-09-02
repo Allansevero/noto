@@ -36,20 +36,34 @@ function mapRow(row: Record<string, unknown>): Patient {
 }
 
 export async function getPatientsByDoctor(medicoId?: string): Promise<Patient[]> {
-  let query = supabase
-    .from(TABLE)
-    .select('*')
-    .order('data_criacao', { ascending: false });
+  // Obtém o usuário logado para garantir que apenas seus pacientes sejam retornados
+  const { data: authData } = await supabase.auth.getUser();
+  const currentUserId = authData?.user?.id;
+  if (!currentUserId) throw new Error('Usuário não autenticado.');
 
+  // Quando um médico específico é selecionado, filtra por ele (RLS garante que é do usuário)
   if (medicoId && medicoId !== '00000000-0000-0000-0000-000000000001') {
-    query = query.eq('medico_id', medicoId);
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select('*')
+      .eq('medico_id', medicoId)
+      .order('data_criacao', { ascending: false });
+
+    if (error) throw error;
+    return (data ?? []).map(mapRow);
   }
 
-  const { data, error } = await query;
+  // Visão geral: filtra todos os pacientes cujos médicos pertencem ao usuário logado
+  const { data, error } = await (supabase as any)
+    .from(TABLE)
+    .select('*, medicos!inner(user_id)')
+    .eq('medicos.user_id', currentUserId)
+    .order('data_criacao', { ascending: false });
 
   if (error) throw error;
   return (data ?? []).map(mapRow);
 }
+
 
 export async function approvePatientPayment(patientId: string): Promise<void> {
   const { error } = await supabase

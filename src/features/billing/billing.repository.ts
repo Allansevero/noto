@@ -88,12 +88,20 @@ export async function getActiveSubscription(): Promise<Subscription | null> {
 
 /**
  * Busca histórico real de faturas da tabela faturas_cobranca no Supabase
+ * Filtra apenas as faturas da assinatura do usuário logado
  */
 export async function getBillingInvoices(): Promise<BillingInvoice[]> {
   try {
+    const { data: authData } = await supabase.auth.getUser();
+    const currentUserId = authData?.user?.id;
+
+    if (!currentUserId) return [];
+
+    // Busca apenas as faturas cujas assinaturas pertencem ao usuário logado
     const { data, error } = await (supabase as any)
       .from(INVOICES_TABLE)
-      .select("*")
+      .select("*, assinaturas!inner(user_id)")
+      .eq("assinaturas.user_id", currentUserId)
       .order("data_emissao", { ascending: false });
 
     if (error || !data) {

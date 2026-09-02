@@ -7,7 +7,7 @@ const TABLE = "notas_fiscais";
 export const INVOICE_RETENTION_DAYS = 90;
 
 /**
- * Busca todas as notas fiscais emitidas dentro da janela de retenção de 90 dias
+ * Busca todas as notas fiscais do usuário logado dentro da janela de retenção de 90 dias
  */
 export async function fetchInvoices(): Promise<Invoice[]> {
   const ninetyDaysAgo = new Date(
@@ -15,9 +15,16 @@ export async function fetchInvoices(): Promise<Invoice[]> {
   ).toISOString();
 
   try {
+    const { data: authData } = await supabase.auth.getUser();
+    const currentUserId = authData?.user?.id;
+
+    if (!currentUserId) return [];
+
+    // Filtra apenas as notas cujos médicos pertencem ao usuário logado
     const { data, error } = await (supabase as any)
       .from(TABLE)
-      .select("*, pacientes(id, nome_completo, cpf, email, telefone), medicos(id, nome_completo, cnpj, crm, foto_perfil)")
+      .select("*, pacientes(id, nome_completo, cpf, email, telefone), medicos!inner(id, nome_completo, cnpj, crm, foto_perfil, user_id)")
+      .eq("medicos.user_id", currentUserId)
       .gte("created_at", ninetyDaysAgo)
       .order("created_at", { ascending: false });
 

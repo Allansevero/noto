@@ -10,9 +10,17 @@ export async function getDashboardMetrics(_periodo: "7d" | "30d" | "90d" = "7d")
   let totalComErro = 0;
 
   try {
+    // Obtém o usuário logado para filtrar apenas seus pacientes
+    const { data: authData } = await (supabase as any).auth.getUser();
+    const currentUserId = authData?.user?.id;
+
+    if (!currentUserId) throw new Error("Usuário não autenticado.");
+
+    // Filtra pacientes via join com médicos do usuário logado
     const { data: pacientes, error } = await (supabase as any)
       .from("pacientes")
-      .select("id, status, created_at, valor_consulta");
+      .select("id, status, created_at, valor_consulta, medicos!inner(user_id)")
+      .eq("medicos.user_id", currentUserId);
 
     if (!error && pacientes) {
       totalEmitidas = pacientes.filter((c: any) => c.status === "Aprovado" || c.status === "Nota Gerada").length;
@@ -22,6 +30,7 @@ export async function getDashboardMetrics(_periodo: "7d" | "30d" | "90d" = "7d")
   } catch (err) {
     console.warn("Erro ao buscar contagem de consultas:", err);
   }
+
 
   // Base de volume
   const baseVolume = Math.max(totalEmitidas, 48);
