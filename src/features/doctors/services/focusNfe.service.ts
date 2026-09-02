@@ -5,6 +5,29 @@ export const FOCUS_MASTER_TOKEN = import.meta.env.VITE_FOCUS_MASTER_TOKEN || imp
 export const FOCUS_HOMOLOGACAO_TOKEN = import.meta.env.VITE_FOCUS_HOMOLOGACAO_TOKEN || "H9gjY2Y7Sxo98RuN2e7G1mald2E5FozQ";
 export const DEFAULT_FOCUS_TOKEN = FOCUS_MASTER_TOKEN;
 
+/**
+ * Retorna a URL correta para chamadas à Focus NF-e:
+ * - Em produção (Vercel): usa a Serverless Function /api/focus-proxy para evitar bloqueios de CORS e Cloudflare 403
+ * - Em localhost: usa o proxy local do Vite (/focus-api)
+ * - No servidor: usa a URL direta da Focus NF-e
+ */
+export function getFocusApiUrl(path: string, ambiente: "homologacao" | "producao" = "producao", refParam?: string): string {
+  const isBrowser = typeof window !== "undefined";
+  const isLocalhost = isBrowser && window.location.hostname === "localhost";
+
+  if (isBrowser && !isLocalhost) {
+    const params = new URLSearchParams({ path, ambiente });
+    if (refParam) params.set("ref", refParam);
+    return `/api/focus-proxy?${params.toString()}`;
+  }
+
+  const host = ambiente === "homologacao"
+    ? (isBrowser ? "/focus-homologacao-api" : "https://homologacao.focusnfe.com.br")
+    : (isBrowser ? "/focus-api" : "https://api.focusnfe.com.br");
+  const query = refParam ? `?ref=${encodeURIComponent(refParam)}` : "";
+  return `${host}${path}${query}`;
+}
+
 export interface SyncFocusParams {
   ambiente?: "homologacao" | "producao";
   aliquotaIss?: number;
@@ -47,7 +70,6 @@ export async function validateAndUploadCertificate(
   const cleanDigits = (str?: string) => (str ? str.replace(/\D/g, "") : "");
   const token = tokenOverride?.trim() || import.meta.env.VITE_FOCUS_MASTER_TOKEN || FOCUS_MASTER_TOKEN;
 
-  const isBrowser = typeof window !== "undefined";
   const cnpjDigits = cleanDigits(doctor.cnpj);
   const cpfDigits = cleanDigits(doctor.cpf);
   const numParsed = parseInt(doctor.endereco?.numero || "100", 10) || 100;
@@ -68,7 +90,9 @@ export async function validateAndUploadCertificate(
     discrimina_impostos: Boolean(doctor.optante_simples_nacional),
     email: doctor.email || `${(doctor.nome || "medico").toLowerCase().replace(/\s+/g, '')}@clinica.com`,
     enviar_email_destinatario: true,
-    habilita_nfse: true,
+    habilita_nfse: false,
+    habilita_nfsen_producao: true,
+    habilita_nfsen_homologacao: true,
     habilita_nfe: false,
     habilita_nfce: false,
     mostrar_danfse_badge: true,
@@ -97,9 +121,7 @@ export async function validateAndUploadCertificate(
     : "/v2/empresas";
   const httpMethod = hasFocusId ? "PUT" : "POST";
 
-  const endpointUrl = isBrowser
-    ? `/focus-api${endpointPath}`
-    : `https://api.focusnfe.com.br${endpointPath}`;
+  const endpointUrl = getFocusApiUrl(endpointPath, "producao");
 
   try {
     const authHeader = `Basic ${btoa(`${token}:`)}`;
@@ -115,7 +137,7 @@ export async function validateAndUploadCertificate(
 
     // Fallback para POST caso PUT retorne 404
     if (response.status === 404 && httpMethod === "PUT") {
-      const fallbackUrl = isBrowser ? "/focus-api/v2/empresas" : "https://api.focusnfe.com.br/v2/empresas";
+      const fallbackUrl = getFocusApiUrl("/v2/empresas", "producao");
       response = await fetch(fallbackUrl, {
         method: "POST",
         headers: {
@@ -190,7 +212,6 @@ export async function syncDoctorWithFocusNfe(
 
   // isHomologacao: kept for future use when endpoint differs per environment
   void ((params?.ambiente || doctor.ambiente_nf || "homologacao") === "homologacao");
-  const isBrowser = typeof window !== "undefined";
 
   const token =
     params?.focusMasterToken?.trim() ||
@@ -221,7 +242,9 @@ export async function syncDoctorWithFocusNfe(
     discrimina_impostos: isOptanteSimples,
     email: doctor.email || `${(doctor.nome || "medico").toLowerCase().replace(/\s+/g, '')}@clinica.com`,
     enviar_email_destinatario: true,
-    habilita_nfse: true,
+    habilita_nfse: false,
+    habilita_nfsen_producao: true,
+    habilita_nfsen_homologacao: true,
     habilita_nfe: false,
     habilita_nfce: false,
     mostrar_danfse_badge: true,
@@ -258,9 +281,8 @@ export async function syncDoctorWithFocusNfe(
     : "/v2/empresas";
   const httpMethod = hasFocusId ? "PUT" : "POST";
 
-  const endpointUrl = isBrowser
-    ? `/focus-api${endpointPath}`
-    : `https://api.focusnfe.com.br${endpointPath}`;
+  const ambienteTarget = (params?.ambiente || doctor.ambiente_nf === "homologacao" ? "homologacao" : "producao") as "homologacao" | "producao";
+  const endpointUrl = getFocusApiUrl(endpointPath, ambienteTarget);
 
   let focusEmpresaId = doctor.focus_empresa_id;
   let focusToken = doctor.focus_token || token;
@@ -282,7 +304,7 @@ export async function syncDoctorWithFocusNfe(
 
     // Se PUT retornar 404, tenta POST
     if (response.status === 404 && httpMethod === "PUT") {
-      const fallbackUrl = isBrowser ? "/focus-api/v2/empresas" : "https://api.focusnfe.com.br/v2/empresas";
+      const fallbackUrl = getFocusApiUrl("/v2/empresas", ambienteTarget);
       response = await fetch(fallbackUrl, {
         method: "POST",
         headers: {

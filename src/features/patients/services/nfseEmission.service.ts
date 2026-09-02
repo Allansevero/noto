@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
-import { DEFAULT_FOCUS_TOKEN, FOCUS_HOMOLOGACAO_TOKEN } from "@/features/doctors/services/focusNfe.service";
+import { DEFAULT_FOCUS_TOKEN, FOCUS_HOMOLOGACAO_TOKEN, getFocusApiUrl } from "@/features/doctors/services/focusNfe.service";
 
 export interface NfseEmissionResult {
   success: boolean;
@@ -41,8 +41,6 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
     ? (import.meta.env.VITE_FOCUS_HOMOLOGACAO_TOKEN || FOCUS_HOMOLOGACAO_TOKEN)
     : masterToken;
 
-  const isBrowser = typeof window !== "undefined";
-
   const cleanCnpj = cleanDigits(doctor?.cnpj);
   const cleanCpfTomador = cleanDigits(patient.cpf);
 
@@ -65,11 +63,6 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
   const valorServicosReais = rawValor > 1000 ? rawValor / 100 : rawValor;
 
   const isOptanteSimples = Boolean(doctor?.optante_simples_nacional);
-
-  // Roteamento inteligente de ambiente: Homologação vs Produção
-  const baseUrl = isHomologacao
-    ? (isBrowser ? "/focus-homologacao-api" : "https://homologacao.focusnfe.com.br")
-    : (isBrowser ? "/focus-api" : "https://api.focusnfe.com.br");
 
   // Data no formato aceito pelo SPED da NFS-e Nacional
   const dataEmissaoComFuso = `${dataEmissaoLocal}-03:00`;
@@ -104,7 +97,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
     informacoes_complementares: "Totais aproximados dos Tributos cfe. Lei n° 12.741/2012: Federais: 11,33 %; Estaduais: 0,00 %; Municipais: 2,00 %;",
   };
 
-  const endpointUrl = `${baseUrl}/v2/nfsen?ref=${ref}`;
+  const endpointUrl = getFocusApiUrl("/v2/nfsen", isHomologacao ? "homologacao" : "producao", ref);
 
   try {
     const cleanToken = (token || "").trim();
@@ -137,9 +130,8 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
 
     let data = await response.json().catch(() => null);
 
-    // Fallback 1: Se /v2/nfsen retornar 404, tenta a rota municipal padrão /v2/nfse
     if (response.status === 404) {
-      const municipalUrl = `${baseUrl}/v2/nfse?ref=${ref}`;
+      const municipalUrl = getFocusApiUrl("/v2/nfse", isHomologacao ? "homologacao" : "producao", ref);
       const payloadMunicipal: Record<string, unknown> = {
         data_emissao: dataEmissaoComFuso,
         prestador: {
@@ -195,7 +187,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
         const retryAuthHeader = `Basic ${btoa(`${activeToken}:`)}`;
 
         // Tenta re-emitir após o vínculo da empresa
-        const retryUrl = `${baseUrl}/v2/nfsen?ref=${ref}`;
+        const retryUrl = getFocusApiUrl("/v2/nfsen", isHomologacao ? "homologacao" : "producao", ref);
         response = await fetch(retryUrl, {
           method: "POST",
           headers: {
@@ -207,7 +199,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
         data = await response.json().catch(() => null);
 
         if (response.status === 404) {
-          const municipalUrl = `${baseUrl}/v2/nfse?ref=${ref}`;
+          const municipalUrl = getFocusApiUrl("/v2/nfse", isHomologacao ? "homologacao" : "producao", ref);
           response = await fetch(municipalUrl, {
             method: "POST",
             headers: {
@@ -377,22 +369,19 @@ export async function checkNfseStatus(patientId: string): Promise<NfseEmissionRe
     ? (import.meta.env.VITE_FOCUS_HOMOLOGACAO_TOKEN || FOCUS_HOMOLOGACAO_TOKEN)
     : (doctor?.focus_token || import.meta.env.VITE_FOCUS_NFE_TOKEN || DEFAULT_FOCUS_TOKEN);
 
-  const isBrowser = typeof window !== "undefined";
-  const baseUrl = isHomologacao
-    ? (isBrowser ? "/focus-homologacao-api" : "https://homologacao.focusnfe.com.br")
-    : (isBrowser ? "/focus-api" : "https://api.focusnfe.com.br");
-
   try {
     const authHeader = `Basic ${btoa(`${token}:`)}`;
 
     // Tenta consultar primeiro em /v2/nfsen/{ref} e depois /v2/nfse/{ref}
-    let response = await fetch(`${baseUrl}/v2/nfsen/${patient.focus_ref}`, {
+    const checkUrl = getFocusApiUrl(`/v2/nfsen/${patient.focus_ref}`, isHomologacao ? "homologacao" : "producao");
+    let response = await fetch(checkUrl, {
       method: "GET",
       headers: { Authorization: authHeader },
     });
 
   if (!response.ok) {
-    response = await fetch(`${baseUrl}/v2/nfse/${patient.focus_ref}`, {
+    const checkMunicipalUrl = getFocusApiUrl(`/v2/nfse/${patient.focus_ref}`, isHomologacao ? "homologacao" : "producao");
+    response = await fetch(checkMunicipalUrl, {
       method: "GET",
       headers: { Authorization: authHeader },
     });
