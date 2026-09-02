@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Pencil, Trash2, Archive, ArchiveRestore } from "lucide-react";
+import { Pencil, Trash2, Archive, ArchiveRestore, ShieldCheck } from "lucide-react";
 import type { Doctor } from "../types";
 
 interface DoctorActionsProps {
@@ -29,7 +29,7 @@ export function DoctorActions({
   onDelete,
   onArchive,
   onUnarchive,
-  onConfigureFocus: _onConfigureFocus,
+  onConfigureFocus,
 }: DoctorActionsProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
@@ -70,6 +70,18 @@ export function DoctorActions({
 
   return (
     <div className="flex items-center justify-end gap-0.5">
+      {/* 0. Botão Certificado Digital A1 / Focus NF-e */}
+      {onConfigureFocus && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onConfigureFocus(doctor)}
+          title="Configurar Certificado Digital A1 e Focus NF-e"
+          className="h-7 w-7 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-none transition-colors"
+        >
+          <ShieldCheck className="h-3.5 w-3.5" />
+        </Button>
+      )}
 
       {/* 1. Botão Editar */}
       <Button

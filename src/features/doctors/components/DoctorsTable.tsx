@@ -43,6 +43,8 @@ import {
   ArchiveRestore,
   Trash2,
   X,
+  ShieldCheck,
+  AlertCircle,
 } from "lucide-react";
 import type { Doctor } from "../types";
 
@@ -304,6 +306,9 @@ export function DoctorsTable({ onOpenNewDoctor, onOpenDoctorSettings }: DoctorsT
                 Emissora
               </TableHead>
               <TableHead className="font-display font-bold text-[11px] uppercase tracking-wider text-foreground/90 px-3 py-1.5 text-center whitespace-nowrap">
+                Certificado A1
+              </TableHead>
+              <TableHead className="font-display font-bold text-[11px] uppercase tracking-wider text-foreground/90 px-3 py-1.5 text-center whitespace-nowrap">
                 Qtd. Pacientes
               </TableHead>
               <TableHead className="font-display font-bold text-[11px] uppercase tracking-wider text-foreground/90 pr-6 pl-3 py-1.5 text-right whitespace-nowrap">
@@ -314,7 +319,7 @@ export function DoctorsTable({ onOpenNewDoctor, onOpenDoctorSettings }: DoctorsT
           <TableBody>
             {isLoading && doctors.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-28 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="h-28 text-center text-muted-foreground">
                   <div className="flex flex-col items-center justify-center gap-1.5">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                     <span className="text-xs">Carregando médicos...</span>
@@ -323,13 +328,13 @@ export function DoctorsTable({ onOpenNewDoctor, onOpenDoctorSettings }: DoctorsT
               </TableRow>
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-28 text-center text-destructive">
+                <TableCell colSpan={8} className="h-28 text-center text-destructive">
                   <span className="text-xs">Erro ao carregar dados: {error}</span>
                 </TableCell>
               </TableRow>
             ) : doctors.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-28 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="h-28 text-center text-muted-foreground">
                   <div className="flex flex-col items-center justify-center gap-1.5">
                     <Stethoscope className="h-6 w-6 text-muted-foreground/40" />
                     <span className="text-xs font-medium">Nenhum médico encontrado</span>
@@ -426,7 +431,38 @@ export function DoctorsTable({ onOpenNewDoctor, onOpenDoctorSettings }: DoctorsT
                       </span>
                     </TableCell>
 
-                    {/* 5. Quantidade de pacientes em linha única */}
+                    {/* 5. Certificado A1 / Focus NF-e */}
+                    <TableCell className="text-center px-3 py-1.5 whitespace-nowrap">
+                      {doctor.focus_empresa_id || doctor.focus_token ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onOpenDoctorSettings) onOpenDoctorSettings(doctor);
+                            else setFocusDoctor(doctor);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-mono font-medium hover:bg-emerald-500/20 transition-colors cursor-pointer"
+                          title="Certificado A1 ativo e vinculado à Focus NF-e. Clique para gerenciar."
+                        >
+                          <ShieldCheck className="h-3 w-3 shrink-0" />
+                          <span>Ativo</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onOpenDoctorSettings) onOpenDoctorSettings(doctor);
+                            else setFocusDoctor(doctor);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[11px] font-mono font-medium hover:bg-amber-500/20 transition-colors cursor-pointer"
+                          title="Certificado A1 pendente. Clique para anexar o arquivo .pfx e senha."
+                        >
+                          <AlertCircle className="h-3 w-3 shrink-0" />
+                          <span>Pendente</span>
+                        </button>
+                      )}
+                    </TableCell>
+
+                    {/* 6. Quantidade de pacientes em linha única */}
                     <TableCell className="text-center px-3 py-1.5 whitespace-nowrap">
                       <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted/30 border border-border font-mono text-xs font-medium text-foreground">
                         <Users className="h-3 w-3 text-muted-foreground" />

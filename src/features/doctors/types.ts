@@ -77,4 +77,6 @@ export interface CreateDoctorInput {
   regime_especial_tributacao?: string;
   codigo_tributario_municipio?: string;
   codigo_municipio_ibge?: string;
+  arquivoCertificadoBase64?: string;
+  senhaCertificado?: string;
 }
