@@ -89,6 +89,10 @@ export interface CreatePatientInput {
 }
 
 export async function createPatient(input: CreatePatientInput): Promise<Patient> {
+  // Obtém o usuário logado para vincular o paciente ao dono
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Usuário não autenticado.');
+
   // Verificar CPF duplicado para o mesmo médico
   const { data: existing } = await supabase
     .from(TABLE)
@@ -104,6 +108,7 @@ export async function createPatient(input: CreatePatientInput): Promise<Patient>
   const { data, error } = await supabase
     .from(TABLE)
     .insert({
+      user_id: user.id, // ← vínculo obrigatório
       medico_id: input.medicoId,
       nome_completo: input.nome_completo,
       email: input.email,
@@ -137,7 +142,12 @@ export async function createPatientsBatch(
     return { insertedCount: 0, errors: [] };
   }
 
+  // Obtém o usuário logado para vincular os pacientes ao dono
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Usuário não autenticado.');
+
   const rowsToInsert = patientsInput.map((p) => ({
+    user_id: user.id, // ← vínculo obrigatório
     medico_id: p.medicoId,
     nome_completo: p.nome_completo,
     email: p.email || `${p.nome_completo.toLowerCase().replace(/[^a-z0-9]/g, "") || "paciente"}@paciente.com`,
@@ -147,6 +157,7 @@ export async function createPatientsBatch(
     status: "Pendente" as PatientStatus,
     data_criacao: p.data_consulta ? new Date(p.data_consulta).toISOString() : new Date().toISOString(),
   }));
+
 
   const { data, error } = await supabase
     .from(TABLE)

@@ -76,10 +76,15 @@ function mapRow(row: Record<string, unknown>, patientCount = 0): Doctor {
 }
 
 export async function getDoctors(): Promise<Doctor[]> {
-  // 1. Busca médicos
+  // 1. Obtém o usuário autenticado para filtrar apenas seus médicos
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Usuário não autenticado.');
+
+  // 2. Busca apenas os médicos do usuário logado (RLS também garante isso no banco)
   const { data: doctorsData, error: docError } = await supabase
     .from(TABLE)
     .select('*')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
   if (docError) {
@@ -121,8 +126,13 @@ export async function createDoctor(input: CreateDoctorInput): Promise<Doctor> {
     sobrenome: input.sobrenome || '',
   };
 
+  // Obtém o usuário logado para associar o médico ao seu dono
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Usuário não autenticado.');
+
   // ATENÇÃO: Enviamos APENAS as colunas existentes no schema do banco, com NULL para opcionais únicos
   const insertPayload: Record<string, unknown> = {
+    user_id: user.id, // ← vínculo obrigatório com o usuário dono
     nome_completo: input.nome_completo.trim(),
     email: fallbackEmail,
     telefone: input.telefone ? input.telefone.trim() : null,
