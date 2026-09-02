@@ -25,6 +25,10 @@ export const authService = {
       provider: 'google',
       options: {
         redirectTo: window.location.origin,
+        queryParams: {
+          prompt: 'select_account', // Sempre exibe a tela de seleção de conta do Google
+          access_type: 'offline',
+        },
       },
     });
     if (error) throw error;
