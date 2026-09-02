@@ -99,7 +99,24 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
   const endpointUrl = `${baseUrl}/v2/nfsen?ref=${ref}`;
 
   try {
-    const authHeader = `Basic ${btoa(`${token}:`)}`;
+    const cleanToken = (token || "").trim();
+    const authHeader = `Basic ${btoa(`${cleanToken}:`)}`;
+
+    // Se o médico ainda não possui focus_empresa_id ou se o CNPJ ainda não foi sincronizado na Focus,
+    // sincroniza a empresa primeiro para garantir que a Focus autorize a emissão sob este CNPJ
+    if (!doctor?.focus_empresa_id && cleanCnpj) {
+      try {
+        const { syncDoctorWithFocusNfe } = await import("@/features/doctors/services/focusNfe.service");
+        await syncDoctorWithFocusNfe(doctor, {
+          ambiente: isHomologacao ? "homologacao" : "producao",
+          aliquotaIss: doctor?.aliquota_iss ?? 3.0,
+          itemServico: doctor?.item_lista_servico || "0401",
+        });
+      } catch (syncErr: any) {
+        console.warn("Aviso na pré-sincronização da empresa com a Focus NF-e:", syncErr.message);
+      }
+    }
+
     let response = await fetch(endpointUrl, {
       method: "POST",
       headers: {
@@ -111,7 +128,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
 
     let data = await response.json().catch(() => null);
 
-    // Fallback: Se /v2/nfsen retornar 404, tenta a rota municipal padrão /v2/nfse
+    // Fallback 1: Se /v2/nfsen retornar 404, tenta a rota municipal padrão /v2/nfse
     if (response.status === 404) {
       const municipalUrl = `${baseUrl}/v2/nfse?ref=${ref}`;
       const payloadMunicipal: Record<string, unknown> = {
@@ -148,6 +165,66 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
       });
 
       data = await response.json().catch(() => null);
+    }
+
+    // Fallback 2: Se retornar 403 (CNPJ não vinculado/autorizado na Focus), tenta registrar a empresa na Focus e re-emitir
+    if (response.status === 403 && cleanCnpj) {
+      try {
+        const { syncDoctorWithFocusNfe } = await import("@/features/doctors/services/focusNfe.service");
+        const syncRes = await syncDoctorWithFocusNfe(doctor, {
+          ambiente: isHomologacao ? "homologacao" : "producao",
+          aliquotaIss: doctor?.aliquota_iss ?? 3.0,
+          itemServico: doctor?.item_lista_servico || "0401",
+        });
+
+        const activeToken = (syncRes.focusToken || cleanToken).trim();
+        const retryAuthHeader = `Basic ${btoa(`${activeToken}:`)}`;
+
+        // Tenta re-emitir após o vínculo da empresa
+        const retryUrl = `${baseUrl}/v2/nfsen?ref=${ref}`;
+        response = await fetch(retryUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: retryAuthHeader,
+          },
+          body: JSON.stringify(payloadNacional),
+        });
+        data = await response.json().catch(() => null);
+
+        if (response.status === 404) {
+          const municipalUrl = `${baseUrl}/v2/nfse?ref=${ref}`;
+          response = await fetch(municipalUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: retryAuthHeader,
+            },
+            body: JSON.stringify({
+              data_emissao: dataEmissaoComFuso,
+              prestador: {
+                cnpj: cleanCnpj,
+                inscricao_municipal: doctor?.inscricao_municipal || undefined,
+                codigo_municipio: doctor?.codigo_municipio_ibge || "4314902",
+              },
+              tomador: {
+                cpf: cleanCpfTomador || undefined,
+                razao_social: patient.nome_completo,
+                email: patient.email || undefined,
+              },
+              servico: {
+                valor_servicos: Number(valorServicosReais.toFixed(2)),
+                aliquota: Number(doctor?.aliquota_iss || 3.0),
+                item_lista_servico: doctor?.item_lista_servico?.replace(/\D/g, "") || "0401",
+                discriminacao: `REFERENTE 1 CONSULTA: ${doctor?.nome_completo || 'MÉDICO'} - DATA ${dataConsultaFormatada} - PACIENTE: ${patient.nome_completo}`,
+              },
+            }),
+          });
+          data = await response.json().catch(() => null);
+        }
+      } catch (autoRegErr: any) {
+        console.warn("Tentativa de auto-registro da empresa na Focus:", autoRegErr.message);
+      }
     }
 
     if (response.ok || response.status === 200 || response.status === 201 || response.status === 202) {
@@ -216,12 +293,21 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
         xmlUrl: xmlUrl,
       };
     } else {
-      const errorMsg =
+      let errorMsg =
         data?.mensagem ||
         data?.erros?.[0]?.mensagem ||
-        data?.erros?.[0] ||
-        data?.message ||
-        `Erro HTTP ${response.status} na Focus NF-e`;
+        (typeof data?.erros?.[0] === "string" ? data?.erros?.[0] : null) ||
+        data?.message;
+
+      if (!errorMsg) {
+        if (response.status === 403) {
+          errorMsg = `Erro 403 (Acesso Negado): O CNPJ ${cleanCnpj || "do médico"} não está autorizado no token da Focus NF-e ou a empresa não está cadastrada na sua conta Focus. Anexe o Certificado A1 do médico ou verifique as permissões do token na Focus NF-e.`;
+        } else if (response.status === 401) {
+          errorMsg = "Erro 401 (Não Autorizado): Token da Focus NF-e inválido ou expirado.";
+        } else {
+          errorMsg = `Erro HTTP ${response.status} na Focus NF-e`;
+        }
+      }
 
       await supabase
         .from("pacientes")
