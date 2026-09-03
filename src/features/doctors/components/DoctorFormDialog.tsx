@@ -41,12 +41,7 @@ import {
   AlertTriangle,
   FileText,
   UserPlus,
-  ShieldCheck,
-  Eye,
-  EyeOff,
-  FileCheck,
 } from "lucide-react";
-import { validateAndUploadCertificate } from "../services/focusNfe.service";
 import type { Doctor } from "../types";
 
 // Schema de validação
@@ -111,12 +106,6 @@ export function DoctorFormDialog({
   const [importedXmlData, setImportedXmlData] = useState<ParsedNfseData | null>(null);
   const xmlFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Estados do Certificado Digital A1
-  const [certFile, setCertFile] = useState<File | null>(null);
-  const [certBase64, setCertBase64] = useState<string>("");
-  const [certPassword, setCertPassword] = useState<string>("");
-  const [showCertPassword, setShowCertPassword] = useState(false);
-  const certFileInputRef = useRef<HTMLInputElement>(null);
 
   const { isLoading: isSubmitting, error, create, reset: resetHook } = useCreateDoctor();
 
@@ -209,34 +198,10 @@ export function DoctorFormDialog({
       });
       setCurrentStep(1);
       setIsSuccessView(false);
-      // Reset do XML e Certificado
+      // Reset do XML
       setImportedXmlData(null);
-      setCertFile(null);
-      setCertBase64("");
-      setCertPassword("");
     }
   }, [doctorToEdit, open, form]);
-
-  const handleCertFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const extension = file.name.split(".").pop()?.toLowerCase();
-    if (extension !== "pfx" && extension !== "p12") {
-      toast.error("Formato inválido. Selecione um arquivo de certificado .pfx ou .p12");
-      return;
-    }
-
-    setCertFile(file);
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      const base64Clean = result.split(";base64,")[1] || result;
-      setCertBase64(base64Clean);
-      toast.success(`Certificado ${file.name} carregado!`);
-    };
-    reader.readAsDataURL(file);
-  };
 
   // Leitura e Extração do XML de NFS-e
   const handleXmlUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -345,20 +310,9 @@ export function DoctorFormDialog({
             aliquotaIss: values.aliquota_iss || 2.0,
             itemServico: values.item_lista_servico || "041601",
             regimeTributario: values.optante_simples_nacional ? 1 : 3,
-            arquivoCertificadoBase64: certBase64 || undefined,
-            senhaCertificado: certPassword || undefined,
           });
         } catch (syncErr: any) {
           console.warn("Aviso ao sincronizar parâmetros com a Focus NF-e:", syncErr.message);
-        }
-
-        if (certBase64) {
-          const certResult = await validateAndUploadCertificate(updatedDoctor, certBase64, certPassword);
-          if (!certResult.valid) {
-            toast.error(`Senha do certificado inválida: ${certResult.message}. Corrija a senha e tente novamente.`);
-            return; // Bloqueia: não fecha o dialog, não confirma o salvamento
-          }
-          toast.success("Certificado Digital A1 instalado com sucesso na Focus NF-e!");
         }
 
         toast.success(`Cadastro de Dr(a). ${nomeCompleto} atualizado com sucesso!`);
@@ -368,19 +322,6 @@ export function DoctorFormDialog({
         toast.error(err.message || "Erro ao atualizar médico.");
       }
       return;
-    }
-
-    // Se foi fornecido certificado, valida ANTES de salvar o médico
-    if (certBase64) {
-      const preCheckResult = await validateAndUploadCertificate(
-        { cnpj: values.cnpj, cpf: "", nome_completo: nomeCompleto, nome_fantasia: values.nome_fantasia || values.razao_social, razao_social: values.razao_social, email: values.email_empresa || "", telefone: formattedWhatsapp, optante_simples_nacional: values.optante_simples_nacional ?? false, endereco: values.cep ? { cep: values.cep, logradouro: values.logradouro ?? "", numero: values.numero ?? "", complemento: values.complemento, bairro: values.bairro ?? "", cidade: values.cidade ?? "", uf: values.uf ?? "" } : undefined, codigo_municipio_ibge: values.codigo_municipio_ibge || "" } as any,
-        certBase64,
-        certPassword
-      );
-      if (!preCheckResult.valid) {
-        toast.error(`Senha do certificado inválida: ${preCheckResult.message}. Corrija a senha e tente novamente.`);
-        return; // Bloqueia o cadastro até a senha estar correta
-      }
     }
 
     const doctor = await create({
@@ -403,8 +344,6 @@ export function DoctorFormDialog({
       aliquota_iss: values.aliquota_iss || 2.0,
       codigo_tributario_municipio: values.item_lista_servico || "041601",
       codigo_municipio_ibge: values.codigo_municipio_ibge || "",
-      arquivoCertificadoBase64: certBase64 || undefined,
-      senhaCertificado: certPassword || undefined,
       endereco: values.cep
         ? {
             cep: values.cep,
@@ -955,98 +894,6 @@ export function DoctorFormDialog({
                           </FormItem>
                         )}
                       />
-                    </div>
-
-                    {/* ── SEÇÃO CERTIFICADO DIGITAL A1 (.PFX / .P12) ── */}
-                    <div className="p-4 border border-border bg-card/60 rounded-none space-y-3 mt-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                          <span className="text-xs font-semibold text-foreground font-display">
-                            Certificado Digital A1 (.pfx / .p12) — Focus NF-e
-                          </span>
-                        </div>
-                        <span className="text-[10px] uppercase font-mono text-muted-foreground px-1.5 py-0.5 bg-muted">
-                          Para Emissão de NFS-e
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        Anexe o arquivo de Certificado Digital A1 do médico para permitir a transmissão direta e autorização das notas fiscais na Focus NF-e.
-                      </p>
-
-                      <input
-                        type="file"
-                        ref={certFileInputRef}
-                        accept=".pfx,.p12"
-                        className="hidden"
-                        onChange={handleCertFileChange}
-                      />
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        {/* Arquivo do Certificado */}
-                        <div>
-                          <label className="text-xs font-medium text-foreground block mb-1.5">
-                            Arquivo do Certificado (.pfx ou .p12)
-                          </label>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => certFileInputRef.current?.click()}
-                              className="h-9 text-xs rounded-none border-border hover:bg-muted font-medium gap-1.5 w-full justify-start text-left truncate"
-                            >
-                              <FileCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                              <span className="truncate">
-                                {certFile ? certFile.name : "Selecionar arquivo .pfx / .p12"}
-                              </span>
-                            </Button>
-                            {certFile && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setCertFile(null);
-                                  setCertBase64("");
-                                  if (certFileInputRef.current) certFileInputRef.current.value = "";
-                                }}
-                                className="h-9 px-2 text-xs text-destructive rounded-none"
-                              >
-                                Limpar
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Senha do Certificado */}
-                        <div>
-                          <label className="text-xs font-medium text-foreground block mb-1.5">
-                            Senha do Certificado
-                          </label>
-                          <div className="relative">
-                            <Input
-                              type={showCertPassword ? "text" : "password"}
-                              value={certPassword}
-                              onChange={(e) => setCertPassword(e.target.value)}
-                              placeholder="••••••••"
-                              className="h-9 text-xs font-mono rounded-none pr-9"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowCertPassword(!showCertPassword)}
-                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
-                              tabIndex={-1}
-                            >
-                              {showCertPassword ? (
-                                <EyeOff className="h-3.5 w-3.5" />
-                              ) : (
-                                <Eye className="h-3.5 w-3.5" />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 )}
