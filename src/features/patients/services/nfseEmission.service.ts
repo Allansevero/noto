@@ -30,8 +30,14 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
   }
 
   const doctor = patient.medicos;
+
+  // Override de homologação: se o email do paciente for o email de teste,
+  // SEMPRE emite em homologação, independente da configuração do médico.
+  const HOMOLOGACAO_TEST_EMAIL = "severoallan2019@gmail.com";
+  const isTestPatient = patient.email?.toLowerCase().trim() === HOMOLOGACAO_TEST_EMAIL;
+
   // Ambiente do médico: null/undefined = produção. Só usa homologação se explicitamente configurado.
-  const isHomologacao = doctor?.ambiente_nf === "homologacao";
+  const isHomologacao = isTestPatient || doctor?.ambiente_nf === "homologacao";
 
   // SEMPRE usa o token master para emissão — o doctor.focus_token é um token de empresa
   // que a Focus retorna mas que NÃO tem permissão para emitir notas.
