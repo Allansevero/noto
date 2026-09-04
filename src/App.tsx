@@ -246,7 +246,7 @@ function App() {
       <SimulationModeBanner onUpgradeClick={() => setCurrentPath("/planos")} />
 
       {/* Header fixo no topo */}
-      <SiteHeader pageTitle={pageTitle} onLogout={handleLogout} onNavigate={(path) => setCurrentPath(path)} />
+      <SiteHeader pageTitle={pageTitle} onLogout={handleLogout} />
 
       {/* Linha: Dual Sidebar + Conteúdo Principal */}
       <div className="flex flex-1 overflow-hidden">
