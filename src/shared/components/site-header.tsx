@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, CircleHelp, ChevronRight, UserRound, X, Bug, Plug, Sun, Moon, Sparkles } from "lucide-react";
+import { Search, CircleHelp, ChevronRight, UserRound, X, Bug, Plug, Sun, Moon } from "lucide-react";
 import { Logo } from "@/shared/components/Logo";
 import { cn } from "@/lib/utils";
 import { useDoctors } from "@/features/doctors/hooks/useDoctors";
@@ -27,11 +27,9 @@ interface SiteHeaderProps {
   pageTitle?: string;
   /** Callback disparado ao clicar no botão de logout (avatar) */
   onLogout?: () => void;
-  /** Callback de navegação entre rotas */
-  onNavigate?: (path: string) => void;
 }
 
-export function SiteHeader({ pageTitle = "Pacientes", onLogout, onNavigate }: SiteHeaderProps) {
+export function SiteHeader({ pageTitle = "Pacientes", onLogout }: SiteHeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [bugModalOpen, setBugModalOpen] = useState(false);

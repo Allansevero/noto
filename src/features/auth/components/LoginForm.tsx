@@ -43,11 +43,7 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-interface LoginFormProps {
-  onNavigateToDoctorOnboarding?: () => void;
-}
-
-export function LoginForm({ onNavigateToDoctorOnboarding }: LoginFormProps = {}) {
+export function LoginForm() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);

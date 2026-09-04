@@ -4,15 +4,14 @@ import { DoctorFormDialog } from "./DoctorFormDialog";
 import { DoctorSettingsPage } from "./DoctorSettingsPage";
 import { useDoctors } from "../hooks/useDoctors";
 import { Button } from "@/components/ui/button";
-import { Stethoscope, UserPlus, Users, Building2, CheckCircle2, Sparkles } from "lucide-react";
+import { Stethoscope, UserPlus, Users, Building2, CheckCircle2 } from "lucide-react";
 import type { Doctor } from "../types";
 
 interface DoctorsPageProps {
   onNavigateToPatients?: () => void;
-  onNavigateToOnboarding?: () => void;
 }
 
-export function DoctorsPage({ onNavigateToPatients, onNavigateToOnboarding }: DoctorsPageProps) {
+export function DoctorsPage({ onNavigateToPatients }: DoctorsPageProps) {
   const [isDoctorFormOpen, setIsDoctorFormOpen] = useState(false);
   const [selectedDoctorForSettings, setSelectedDoctorForSettings] = useState<Doctor | null>(null);
   const { allDoctors } = useDoctors();
