@@ -43,7 +43,11 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-export function LoginForm() {
+interface LoginFormProps {
+  onNavigateToDoctorOnboarding?: () => void;
+}
+
+export function LoginForm({ onNavigateToDoctorOnboarding }: LoginFormProps = {}) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -243,6 +247,8 @@ export function LoginForm() {
               </div>
             </form>
           </Form>
+
+
         </div>
 
         {/* Rodapé Seguro */}

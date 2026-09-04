@@ -37,8 +37,8 @@ function mapRow(row: Record<string, unknown>): Patient {
 
 export async function getPatientsByDoctor(medicoId?: string): Promise<Patient[]> {
   // Obtém o usuário logado para garantir que apenas seus pacientes sejam retornados
-  const { data: authData } = await supabase.auth.getUser();
-  const currentUserId = authData?.user?.id;
+  const { data: authData } = await supabase.auth.getSession();
+  const currentUserId = authData?.session?.user?.id;
   if (!currentUserId) throw new Error('Usuário não autenticado.');
 
   // Quando um médico específico é selecionado, filtra por ele (RLS garante que é do usuário)
@@ -104,7 +104,8 @@ export interface CreatePatientInput {
 
 export async function createPatient(input: CreatePatientInput): Promise<Patient> {
   // Obtém o usuário logado para vincular o paciente ao dono
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) throw new Error('Usuário não autenticado.');
 
   // Verificar CPF duplicado para o mesmo médico
@@ -157,7 +158,8 @@ export async function createPatientsBatch(
   }
 
   // Obtém o usuário logado para vincular os pacientes ao dono
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) throw new Error('Usuário não autenticado.');
 
   const rowsToInsert = patientsInput.map((p) => ({

@@ -70,6 +70,7 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         icon: <Stethoscope className="h-4 w-4" strokeWidth={1.5} />,
         description: "Médicos cadastrados e emissores PJ",
       },
+
     ],
   },
   {
@@ -122,7 +123,7 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
 
 // Helper para descobrir a seção atual pela rota ativa
 function getSectionByPath(path: string): SidebarSection["id"] {
-  if (path === "/medicos" || path === "/pacientes" || path === "/") {
+  if (path === "/medicos" || path === "/pacientes" || path === "/" || path === "/onboarding-medico") {
     return "cadastros";
   }
   if (path.startsWith("/notas")) {

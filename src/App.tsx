@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PatientsTable } from "@/features/patients/components/PatientsTable";
 import { DoctorFormDialog } from "@/features/doctors/components/DoctorFormDialog";
 import { DoctorsPage } from "@/features/doctors/components/DoctorsPage";
@@ -7,6 +7,7 @@ import { InvoicesPage } from "@/features/invoices/components/InvoicesPage";
 import { InvoiceMetricsPage } from "@/features/invoices/components/InvoiceMetricsPage";
 import { BillingPage } from "@/features/billing/components/BillingPage";
 import { SettingsPage } from "@/features/settings/components/SettingsPage";
+import { DoctorOnboardingWizard } from "@/features/doctor-onboarding/components/DoctorOnboardingWizard";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { UserPlus, Users, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
@@ -141,6 +142,29 @@ function App() {
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const [paywallAction, setPaywallAction] = useState<"doctor" | "patient" | "invoice" | "general">("doctor");
 
+  useEffect(() => {
+    const checkRoute = () => {
+      const hash = window.location.hash;
+      const path = window.location.pathname;
+      const search = window.location.search;
+      if (
+        hash === "#onboarding-medico" ||
+        hash === "#medico" ||
+        path === "/onboarding-medico" ||
+        path === "/medico" ||
+        path === "/comecar" ||
+        search.includes("origem=vendas") ||
+        search.includes("ref=sales") ||
+        search.includes("medico")
+      ) {
+        setCurrentPath("/onboarding-medico");
+      }
+    };
+    checkRoute();
+    window.addEventListener("hashchange", checkRoute);
+    return () => window.removeEventListener("hashchange", checkRoute);
+  }, []);
+
   const handleLogout = async () => {
     try {
       await authService.signOut();
@@ -161,6 +185,23 @@ function App() {
   const handleDoctorCreated = () => {
     // Atualização realtime
   };
+
+  // Fluxo Imersivo de Onboarding do Médico (quando vem da página de vendas, sem exigir login da secretária)
+  if (
+    currentPath === "/onboarding-medico" ||
+    currentPath === "/medico" ||
+    currentPath === "/comecar"
+  ) {
+    return (
+      <>
+        <DoctorOnboardingWizard
+          onExit={() => setCurrentPath("/")}
+          onFinish={() => setCurrentPath("/pacientes")}
+        />
+        <Toaster richColors position="top-right" />
+      </>
+    );
+  }
 
   if (loading) {
     return (
@@ -205,7 +246,7 @@ function App() {
       <SimulationModeBanner onUpgradeClick={() => setCurrentPath("/planos")} />
 
       {/* Header fixo no topo */}
-      <SiteHeader pageTitle={pageTitle} onLogout={handleLogout} />
+      <SiteHeader pageTitle={pageTitle} onLogout={handleLogout} onNavigate={(path) => setCurrentPath(path)} />
 
       {/* Linha: Dual Sidebar + Conteúdo Principal */}
       <div className="flex flex-1 overflow-hidden">
@@ -221,7 +262,9 @@ function App() {
             onNavigateToDoctors={() => setCurrentPath("/medicos")}
           />
         ) : isDoctorsPage ? (
-          <DoctorsPage onNavigateToPatients={() => setCurrentPath("/pacientes")} />
+          <DoctorsPage
+            onNavigateToPatients={() => setCurrentPath("/pacientes")}
+          />
         ) : isInvoiceMetricsPage ? (
           <InvoiceMetricsPage />
         ) : isInvoicesPage ? (
