@@ -244,20 +244,24 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
 
     if (response.ok || response.status === 200 || response.status === 201 || response.status === 202) {
       const nowIso = new Date().toISOString();
-      const numeroGerado = data?.numero || data?.numero_dps || String(payloadNacional.numero_dps);
-      const pdfUrl = data?.caminho_danfse || data?.url_danfse || `https://homologacao.focusnfe.com.br/danfse/${ref}`;
-      const xmlUrl = data?.caminho_xml_nota_fiscal || `https://homologacao.focusnfe.com.br/xml/${ref}.xml`;
+      const statusFocus = data?.status; // 'autorizado', 'processando_autorizacao', etc
+      const isAutorizado = statusFocus === "autorizado";
+
+      const numeroGerado = data?.numero || data?.numero_dps || (isAutorizado ? String(payloadNacional.numero_dps) : null);
+      const pdfUrl = data?.caminho_danfse || data?.url_danfse || null;
+      const xmlUrl = data?.caminho_xml_nota_fiscal || data?.url || null;
+      const novoStatus = isAutorizado ? "Nota Gerada" : "Processando emissão";
 
       // 1. Atualiza registro na tabela de pacientes
       const { error: updErr } = await supabase
         .from("pacientes")
         .update({
-          status: "Nota Gerada",
+          status: novoStatus,
           focus_ref: ref,
           nfse_numero: numeroGerado,
           nfse_pdf_url: pdfUrl,
           nfse_xml_url: xmlUrl,
-          data_nota_gerada: nowIso,
+          data_nota_gerada: isAutorizado ? nowIso : null,
           nfse_data_emissao: dataEmissaoComFuso,
           data_consulta: dataCompetencia,
           nfse_erro_motivo: null,
@@ -278,7 +282,7 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
           numero_dps: String(payloadNacional.numero_dps),
           serie_dps: "1",
           focus_ref: ref,
-          status: "Nota Gerada",
+          status: novoStatus,
           valor_servico: valorServicosReais,
           aliquota_iss: doctor?.aliquota_iss || 2.0,
           valor_iss: Number((valorServicosReais * ((doctor?.aliquota_iss || 2.0) / 100)).toFixed(2)),
@@ -300,8 +304,10 @@ export async function emitNfseFocus(patientId: string, dataConsultaParam?: strin
 
       return {
         success: true,
-        status: "Nota Gerada",
-        message: `NFS-e #${numeroGerado} gerada e salva com sucesso!`,
+        status: novoStatus,
+        message: isAutorizado 
+          ? `NFS-e #${numeroGerado} gerada e salva com sucesso!` 
+          : "NFS-e enviada e está processando na prefeitura.",
         focusRef: ref,
         numeroNfse: numeroGerado,
         pdfUrl: pdfUrl,
