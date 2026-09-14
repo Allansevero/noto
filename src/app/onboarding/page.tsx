@@ -45,7 +45,6 @@ import {
   FileText,
   ExternalLink,
   Landmark,
-  Zap,
   CircleDashedCheck,
   LockKeyhole,
   X,
@@ -1109,13 +1108,12 @@ export default function OnboardingPage() {
       {/* ============================================================ */}
       {/* SUB-HEADER: TAGS HORIZONTAIS DAS 4 ETAPAS (SEM FUNDO, SEM LINHAS) */}
       {/* ============================================================ */}
-      {hasStartedIntro && (
-        <div className="w-full bg-white dark:bg-zinc-950 py-3.5 px-4 flex items-center justify-center overflow-x-auto">
+      <div className="w-full bg-white dark:bg-zinc-950 py-3.5 px-4 flex items-center justify-center overflow-x-auto">
         <div className="flex items-center gap-2.5 max-w-4xl mx-auto">
           {tagsConfig.map((item) => {
-            const isActive = activeStep === item.stepNum
-            const isCompleted = item.isCompleted && !isActive
-            const isLocked = !item.isUnlocked
+            const isActive = hasStartedIntro && activeStep === item.stepNum
+            const isCompleted = hasStartedIntro && item.isCompleted && !isActive
+            const isLocked = !hasStartedIntro || !item.isUnlocked
 
             return (
               <button
@@ -1160,7 +1158,6 @@ export default function OnboardingPage() {
           })}
         </div>
       </div>
-      )}
 
       {/* ============================================================ */}
       {/* ÁREA DE CONTEÚDO COM DOTTED BACKDROP FADED NO TOPO             */}
@@ -1188,103 +1185,37 @@ export default function OnboardingPage() {
         {!hasStartedIntro ? (
           <motion.div
             key="onboarding-welcome"
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center text-center max-w-xl mx-auto my-auto py-6 sm:py-10"
+            exit={{ opacity: 0, y: -14 }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-col items-center text-center max-w-xl mx-auto my-auto py-8"
           >
-            {/* Tag / Badge de topo */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 mb-5 select-none">
-              <Zap className="size-3.5" />
-              <span>Configuração Rápida</span>
-            </div>
-
-            {/* Título Principal Requisitado */}
-            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 mb-4 leading-tight font-display">
+            {/* Título Principal */}
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 mb-2">
               Configure e emita sua primeira nota em 30 segundos
             </h1>
 
-            {/* Descrição contextual */}
-            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-normal leading-relaxed max-w-lg mb-8">
-              O Noto simplifica e automatiza a emissão de notas fiscais do seu consultório médico. Em 4 passos descomplicados, seus dados são configurados e você emite uma nota teste em tempo real.
+            {/* Descrição curta e sucinta */}
+            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-normal leading-relaxed max-w-md mb-8">
+              Conecte seus dados fiscais e bancários para automatizar a emissão das suas notas fiscais de forma simples e rápida.
             </p>
 
-            {/* 4 Cards de Visão Geral das Etapas */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full mb-8 text-left">
-              <div className="p-3 rounded-xl border border-neutral-200/70 dark:border-neutral-800 bg-neutral-50/60 dark:bg-zinc-900/60 flex flex-col gap-1.5">
-                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
-                  <FileCode2 className="size-3.5" />
-                  <span>Passo 1</span>
-                </div>
-                <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-                  Leitura do XML
-                </span>
-                <span className="text-[11px] text-neutral-500 leading-tight">
-                  Importação dos dados fiscais
-                </span>
-              </div>
-
-              <div className="p-3 rounded-xl border border-neutral-200/70 dark:border-neutral-800 bg-neutral-50/60 dark:bg-zinc-900/60 flex flex-col gap-1.5">
-                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
-                  <FileKey2 className="size-3.5" />
-                  <span>Passo 2</span>
-                </div>
-                <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-                  Certificado A1
-                </span>
-                <span className="text-[11px] text-neutral-500 leading-tight">
-                  Validação segura na nuvem
-                </span>
-              </div>
-
-              <div className="p-3 rounded-xl border border-neutral-200/70 dark:border-neutral-800 bg-neutral-50/60 dark:bg-zinc-900/60 flex flex-col gap-1.5">
-                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
-                  <Landmark className="size-3.5" />
-                  <span>Passo 3</span>
-                </div>
-                <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-                  Conta Bancária
-                </span>
-                <span className="text-[11px] text-neutral-500 leading-tight">
-                  Open Finance integrado
-                </span>
-              </div>
-
-              <div className="p-3 rounded-xl border border-neutral-200/70 dark:border-neutral-800 bg-neutral-50/60 dark:bg-zinc-900/60 flex flex-col gap-1.5">
-                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
-                  <Sparkles className="size-3.5" />
-                  <span>Passo 4</span>
-                </div>
-                <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-                  Primeira Nota
-                </span>
-                <span className="text-[11px] text-neutral-500 leading-tight">
-                  Emissão teste instantânea
-                </span>
-              </div>
-            </div>
-
             {/* Botão Começar */}
-            <div className="flex flex-col items-center gap-3">
-              <Button
-                type="button"
-                onClick={() => {
-                  setHasStartedIntro(true)
-                  setActiveStep(1)
-                  if (doctor?.id) {
-                    saveOnboardingStep(doctor.id, 1)
-                  }
-                }}
-                className="h-12 px-9 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:text-neutral-950 font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2.5 group cursor-pointer"
-              >
-                <span>Começar</span>
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-              </Button>
-              <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
-                Configuração guiada e 100% assistida
-              </span>
-            </div>
+            <Button
+              type="button"
+              onClick={() => {
+                setHasStartedIntro(true)
+                setActiveStep(1)
+                if (doctor?.id) {
+                  saveOnboardingStep(doctor.id, 1)
+                }
+              }}
+              className="h-10 px-7 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-neutral-900 font-medium text-xs shadow-sm transition-all duration-150 flex items-center gap-2 cursor-pointer"
+            >
+              <span>Começar</span>
+              <ArrowRight className="size-3.5" />
+            </Button>
           </motion.div>
         ) : (
           <>
