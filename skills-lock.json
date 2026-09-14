@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "supabase-ui-skills": {
+      "source": "ihlamury/design-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "2c4aed9845c797b40a37af8a1ce26191df831b8b837e4bf79a0ff150e4592bd6"
+    }
+  }
+}
