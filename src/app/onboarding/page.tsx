@@ -19,6 +19,8 @@ import {
 import { enviarCertificadoParaFocusNFe } from "@/features/onboarding/services/focusClient.service"
 import type { ExtractedFiscalData } from "@/features/onboarding/types"
 import { usePluggyConnect } from "@/features/banking/hooks/usePluggyConnect"
+import { useOnboardingPaymentPoll } from "@/features/banking/hooks/useOnboardingPaymentPoll"
+import type { TransacaoDetectada } from "@/features/banking/hooks/useOnboardingPaymentPoll"
 import { getDoctorBankAccounts } from "@/features/banking/banking.repository"
 import type { ContaBancaria } from "@/features/banking/types"
 import { ensureOnboardingDoctorPatient } from "@/features/pacientes/pacientes.repository"
@@ -391,6 +393,52 @@ export default function OnboardingPage() {
     },
   })
 
+  // Timestamp de quando a conta foi conectada — usado como data mínima de compliance
+  const step3EnteredAtRef = React.useRef<string | null>(null)
+  React.useEffect(() => {
+    if (activeStep === 3 && bankAccounts.length > 0 && !step3EnteredAtRef.current) {
+      step3EnteredAtRef.current = new Date().toISOString()
+    }
+  }, [activeStep, bankAccounts.length])
+
+  // Callback chamado assim que o PIX de R$ 0,01 for detectado via Realtime
+  const handlePaymentFoundByPoll = React.useCallback(
+    (transacao: TransacaoDetectada) => {
+      // Avança para Step 4 e dispara emissão com os dados reais da transação
+      handleSelectStep(4)
+      // Popula os itens já encontrados antes de entrar na Step 4
+      const primaryAccount = bankAccounts[0]
+      if (primaryAccount) {
+        setStep4DiscoveredItems([
+          {
+            id: "st4-1",
+            label: "Conta conectada",
+            value: `${primaryAccount.banco_nome || "Banco Conectado"} • Ag ${
+              primaryAccount.agencia || "—"
+            } C/C ${primaryAccount.numero_conta || "—"}`,
+          },
+          {
+            id: "st4-2",
+            label: "Enviando R$ 0,01 para sua conta",
+            value: "Transferência de R$ 0,01 enviada",
+          },
+          {
+            id: "st4-3",
+            label: "Identificado pagamento",
+            value: formatPaymentTimestamp(transacao.data),
+          },
+        ])
+        setStep4Progress(85)
+        setFlowStep("generating_invoice")
+      }
+      // Emite a nota com os dados reais
+      setTimeout(() => {
+        triggerEmitInvoice(transacao.id, transacao.data)
+      }, 800)
+    },
+    [bankAccounts, handleSelectStep]
+  )
+
   // Detecta se o onboarding foi aberto em modo Secretária Remota
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -411,6 +459,7 @@ export default function OnboardingPage() {
       if (connectionLink || isGeneratingLink) return
       setIsGeneratingLink(true)
       try {
+        const clientOrigin = typeof window !== "undefined" ? window.location.origin : ""
         const res = await fetch("/api/banking/connection-link", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -418,11 +467,22 @@ export default function OnboardingPage() {
             medicoId,
             medicoNome: doctor?.nome_completo || extractedData?.razao_social || "Médico",
             secretariaNome: secretaryName || "Secretária Remota",
+            origin: clientOrigin,
           }),
         })
         const data = await res.json()
-        if (data.url) {
-          setConnectionLink(data.url)
+        if (data.token) {
+          const baseUrl = clientOrigin && !clientOrigin.includes("localhost")
+            ? clientOrigin
+            : (data.url ? new URL(data.url).origin : clientOrigin)
+          setConnectionLink(`${baseUrl}/conectar-banco/${data.token}`)
+        } else if (data.url) {
+          if (clientOrigin && !clientOrigin.includes("localhost") && data.url.includes("localhost")) {
+            const parsed = new URL(data.url)
+            setConnectionLink(`${clientOrigin}${parsed.pathname}${parsed.search}`)
+          } else {
+            setConnectionLink(data.url)
+          }
         }
       } catch (err) {
         console.error("[Onboarding] Erro ao gerar link de conexão:", err)
@@ -448,22 +508,20 @@ export default function OnboardingPage() {
     const checkDoctorAccounts = async () => {
       try {
         const accounts = await getDoctorBankAccounts(doctor.id)
-        if (accounts && accounts.length > 0 && isPolling) {
+        if (!isPolling) return
+        if (accounts && accounts.length > 0) {
           setBankAccounts(accounts)
           setDoctorConnectedDetected(true)
-          if (doctor?.id) {
-            ensureOnboardingDoctorPatient(doctor.id).catch(() => {})
-          }
           setTimeout(() => {
             handleSelectStep(4)
-          }, 1800)
+          }, 1500)
         }
-      } catch (err) {
-        console.warn("[Onboarding] Polling de contas bancárias:", err)
+      } catch {
+        // silencioso
       }
     }
 
-    const interval = setInterval(checkDoctorAccounts, 2500)
+    const interval = setInterval(checkDoctorAccounts, 3000)
     return () => {
       isPolling = false
       clearInterval(interval)
@@ -479,16 +537,47 @@ export default function OnboardingPage() {
 
   const whatsAppShareUrl = React.useMemo(() => {
     if (!connectionLink) return "#"
-    const medicoNome = doctor?.nome_completo || extractedData?.razao_social || "Doutor(a)"
-    const msg = `Olá, Dr(a). ${medicoNome}! Aqui é da equipe NotoMed. Para concluirmos a automação da emissão das suas notas fiscais de consultas e procedimentos, por favor conecte sua conta bancária de forma segura através deste link:\n\n${connectionLink}\n\nO processo leva menos de 1 minuto e é protegido pelos padrões de Open Finance do Banco Central do Brasil.`
-    return `https://wa.me/?text=${encodeURIComponent(msg)}`
-  }, [connectionLink, doctor, extractedData])
+    const rawName = doctor?.nome_completo || extractedData?.razao_social || "Doutor(a)"
+    const medicoNome = rawName.replace(/^(Dr\.|Dra\.|Dr\(a\)\.|Dr|Dra)\s*/i, "").trim()
+    const remetente = secretaryName ? `sua secretária (*${secretaryName}*)` : "a equipe da sua clínica"
+    
+    const lines = [
+      `🩺 *NotoMed • Autorização de Conta Bancária*`,
+      ``,
+      `Olá, Dr(a). *${medicoNome}*!`,
+      ``,
+      `Para ativarmos a emissão 100% automática das notas fiscais dos seus atendimentos, ${remetente} solicita a conexão da sua conta bancária de recebimentos.`,
+      ``,
+      `🔗 *Acesse o link seguro oficial:*`,
+      `${connectionLink}`,
+      ``,
+      `🔒 *Garantias e Segurança:*`,
+      `• Conexão oficial regulamentada pelo *Banco Central do Brasil (Open Finance)*`,
+      `• Acesso *exclusivamente para leitura* de extratos e identificação de PIX`,
+      `• *Sem qualquer permissão* para transferências, pagamentos ou saques`,
+      `• Conexão instantânea em menos de 1 minuto diretamente no aplicativo do seu banco`,
+      ``,
+      `_NotoMed — Automação Fiscal Inteligente para Médicos_`,
+    ]
+
+    return `https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`
+  }, [connectionLink, doctor, extractedData, secretaryName])
 
   // Status de conclusão de cada etapa
   const isStep1Done = isStep1Completed || Boolean(extractedData?.cnpj)
   const isStep2Done = Boolean(focusEmpresaDetails?.id || extractedData?.focus_empresa_id || certValidated)
   const isStep3Done = bankAccounts.length > 0
   const isStep4Done = Boolean(invoiceResult?.success || flowStep === "invoice_emitted")
+
+  // Hook de polling via Edge Function + Realtime (ativo apenas na Step 3 com conta conectada)
+  // Declarado DEPOIS de isStep4Done pois depende dela na expressão `active`.
+  const { isPollActive: _isPollActive, pollCount: _pollCount } = useOnboardingPaymentPoll({
+    medicoId: doctor?.id,
+    pluggyAccountId: bankAccounts[0]?.pluggy_account_id,
+    minDate: step3EnteredAtRef.current ?? undefined,
+    onPaymentFound: handlePaymentFoundByPoll,
+    active: activeStep === 3 && bankAccounts.length > 0 && !isStep4Done,
+  })
 
   // Cancelar / Parar análise do XML
   const handleStopAnalysis = () => {
@@ -810,7 +899,11 @@ export default function OnboardingPage() {
 
     let transacaoDetectada = payRes?.pago && payRes?.transacao ? payRes.transacao : null
 
-    // Se o pagamento ainda não foi identificado, inicia polling de checagem
+    // Se o pagamento ainda não foi identificado na verificação inicial,
+    // o hook useOnboardingPaymentPoll já está rodando na Step 3 via Realtime.
+    // Aqui fazemos apenas uma janela de espera curta (15s) como cortesia
+    // para o caso de o PIX cair logo após o usuário entrar na Step 4.
+    // O Realtime notificará instantaneamente quando o pagamento chegar.
     if (!transacaoDetectada) {
       setIsWaitingPayment(true)
       const isAlreadyInvoiced = Boolean(payRes?.jaFaturado)
@@ -829,8 +922,11 @@ export default function OnboardingPage() {
         },
       ])
 
-      // Polling por até 12 tentativas (a cada 3.5 segundos)
-      for (let attempt = 1; attempt <= 12; attempt++) {
+      // Janela de espera de 15s (4 tentativas × 3.5s) para o caso de PIX
+      // que já estava no extrato mas não foi detectado na primeira chamada.
+      // O polling contínuo fica a cargo do hook useOnboardingPaymentPoll
+      // via Realtime — sem bloquear a UI por 42s como antes.
+      for (let attempt = 1; attempt <= 4; attempt++) {
         await new Promise((r) => setTimeout(r, 3500))
         payRes = await checkPaymentReceived(
           primaryAccount.pluggy_account_id,
