@@ -363,6 +363,28 @@ export async function ensureOnboardingDoctorPatient(
   const targetDoc = (patientDoc || PACIENTE_ONBOARDING_TESTE.cnpj).replace(/\D/g, "")
   const targetEmail = patientEmail || PACIENTE_ONBOARDING_TESTE.email
 
+  // Tenta via endpoint de servidor para contornar restrições de RLS quando operado por secretária
+  if (typeof window !== "undefined") {
+    try {
+      const res = await fetch("/api/pacientes/ensure-onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          medicoId,
+          patientName: targetName,
+          patientDoc: targetDoc,
+          patientEmail: targetEmail,
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (res.ok && json.success && json.paciente) {
+        return { success: true, paciente: json.paciente as Paciente }
+      }
+    } catch {
+      // continua para o fallback direto
+    }
+  }
+
   if (isSupabaseConfigured) {
     try {
       // 1. Busca se já existe o paciente de teste do médico
@@ -372,7 +394,7 @@ export async function ensureOnboardingDoctorPatient(
         .eq("medico_id", medicoId)
 
       if (fetchErr) {
-        console.warn("[PacientesRepository] Erro ao listar pacientes do médico:", fetchErr)
+        console.warn("[PacientesRepository] Erro ao listar pacientes do médico:", fetchErr.message || fetchErr)
       }
 
       const existing = list?.find(
@@ -398,7 +420,7 @@ export async function ensureOnboardingDoctorPatient(
           .single()
 
         if (updateErr) {
-          console.warn("[PacientesRepository] Erro ao atualizar paciente onboarding:", updateErr)
+          console.warn("[PacientesRepository] Erro ao atualizar paciente onboarding:", updateErr.message || updateErr)
         } else if (updated) {
           return { success: true, paciente: updated as Paciente }
         }
@@ -419,13 +441,13 @@ export async function ensureOnboardingDoctorPatient(
         .single()
 
       if (insertErr) {
-        console.error("[PacientesRepository] Erro ao criar paciente onboarding:", insertErr)
-        return { success: false, error: insertErr.message }
+        console.warn("[PacientesRepository] Aviso ao criar paciente onboarding:", insertErr.message || insertErr)
+        return { success: false, error: insertErr.message || "Não foi possível inserir paciente." }
       }
 
       return { success: true, paciente: created as Paciente }
     } catch (err) {
-      console.error("[PacientesRepository] Exceção ao garantir paciente onboarding:", err)
+      console.warn("[PacientesRepository] Exceção ao garantir paciente onboarding:", err)
       return {
         success: false,
         error: err instanceof Error ? err.message : "Erro ao registrar paciente do médico.",

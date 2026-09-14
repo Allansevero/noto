@@ -2,10 +2,34 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSupabaseClient } from "@/lib/supabase/server"
 import { generateConnectionToken, verifyConnectionToken } from "@/lib/tokens/connection-token"
 
+function resolveBaseUrl(req: NextRequest, clientOrigin?: string): string {
+  if (clientOrigin && clientOrigin.startsWith("http") && !clientOrigin.includes("localhost")) {
+    return clientOrigin.replace(/\/$/, "")
+  }
+  if (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.includes("localhost")) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+  const forwardedHost = req.headers.get("x-forwarded-host") || req.headers.get("host")
+  const proto = req.headers.get("x-forwarded-proto") || "https"
+  if (forwardedHost && !forwardedHost.includes("localhost")) {
+    return `${proto}://${forwardedHost}`
+  }
+  if (clientOrigin && clientOrigin.startsWith("http")) {
+    return clientOrigin.replace(/\/$/, "")
+  }
+  return req.nextUrl.origin || "http://localhost:3000"
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
-    const { medicoId, secretariaNome, secretariaEmail } = body
+    const { medicoId, secretariaNome, secretariaEmail, origin: clientOrigin } = body
 
     if (!medicoId) {
       return NextResponse.json(
@@ -20,8 +44,8 @@ export async function POST(req: NextRequest) {
       secretariaEmail: secretariaEmail || undefined,
     })
 
-    const origin = req.nextUrl.origin || "http://localhost:3000"
-    const url = `${origin}/conectar-banco/${token}`
+    const baseUrl = resolveBaseUrl(req, clientOrigin)
+    const url = `${baseUrl}/conectar-banco/${token}`
 
     return NextResponse.json({
       success: true,
