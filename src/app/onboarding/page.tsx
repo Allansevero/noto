@@ -1160,21 +1160,21 @@ export default function OnboardingPage() {
       </div>
 
       {/* ============================================================ */}
-      {/* ÁREA DE CONTEÚDO COM DOTTED BACKDROP FADED NO TOPO             */}
+      {/* ÁREA DE CONTEÚDO COM DOTTED BACKDROP FADED DE BAIXO PARA CIMA */}
       {/* ============================================================ */}
       <div className="relative flex-1 w-full flex flex-col items-center bg-white dark:bg-zinc-950 overflow-hidden">
-        {/* Bolinhas discretas que cobrem título e descrição e perdem opacidade logo acima das animações */}
+        {/* Bolinhas que aparecem da parte inferior e vão até a parte de cima sumindo aos poucos, deixando título e subtítulo com fundo limpo */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-[210px] sm:h-[235px] select-none"
+          className="pointer-events-none absolute inset-0 select-none"
           style={{
             backgroundImage:
-              "radial-gradient(circle, rgba(0, 0, 0, 0.16) 1.2px, transparent 1.2px)",
+              "radial-gradient(circle, rgba(0, 0, 0, 0.14) 1.2px, transparent 1.2px)",
             backgroundSize: "16px 16px",
             maskImage:
-              "linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 45%, rgba(0, 0, 0, 0.2) 75%, transparent 100%)",
+              "linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.75) 40%, rgba(0, 0, 0, 0.12) 68%, transparent 80%, transparent 100%)",
             WebkitMaskImage:
-              "linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 45%, rgba(0, 0, 0, 0.2) 75%, transparent 100%)",
+              "linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.75) 40%, rgba(0, 0, 0, 0.12) 68%, transparent 80%, transparent 100%)",
           }}
         />
 
@@ -1182,54 +1182,42 @@ export default function OnboardingPage() {
         {/* CONTEÚDO CENTRALIZADO: TÍTULO, DESCRIÇÃO E AÇÃO               */}
         {/* ============================================================ */}
         <main className="relative z-10 flex-1 w-full max-w-3xl mx-auto px-6 py-10 flex flex-col items-center">
-        {!hasStartedIntro ? (
-          <motion.div
-            key="onboarding-welcome"
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -14 }}
-            transition={{ duration: 0.3 }}
-            className="flex flex-col items-center text-center max-w-xl mx-auto my-auto py-8"
-          >
-            {/* Título Principal */}
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 mb-2">
-              Configure e emita sua primeira nota em 30 segundos
-            </h1>
-
-            {/* Descrição curta e sucinta */}
-            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-normal leading-relaxed max-w-md mb-8">
-              Conecte seus dados fiscais e bancários para automatizar a emissão das suas notas fiscais de forma simples e rápida.
-            </p>
-
-            {/* Botão Começar */}
-            <Button
-              type="button"
-              onClick={() => {
-                setHasStartedIntro(true)
-                setActiveStep(1)
-                if (doctor?.id) {
-                  saveOnboardingStep(doctor.id, 1)
-                }
-              }}
-              className="h-10 px-7 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-neutral-900 font-medium text-xs shadow-sm transition-all duration-150 flex items-center gap-2 cursor-pointer"
-            >
-              <span>Começar</span>
-              <ArrowRight className="size-3.5" />
-            </Button>
-          </motion.div>
-        ) : (
-          <>
-          {/* Título e Descrição Centralizados */}
+          {/* Título e Descrição Centralizados (Padronizados em todas as etapas, inclusive na etapa 0) */}
           <div className="text-center max-w-xl mx-auto mb-8">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 mb-2">
-            {currentStepData.title}
-          </h1>
-          {activeStep !== 3 && (
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 mb-2">
+              {!hasStartedIntro
+                ? "Configure e emita sua primeira nota em 30 segundos"
+                : currentStepData.title}
+            </h1>
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-normal leading-relaxed">
-              {currentStepData.description}
+              {!hasStartedIntro
+                ? "Conecte seus dados fiscais e bancários para automatizar a emissão das suas notas fiscais de forma simples e rápida."
+                : (activeStep !== 3 ? currentStepData.description : null)}
             </p>
+          </div>
+
+          {/* Etapa 0: Ação inicial para começar o onboarding */}
+          {!hasStartedIntro && (
+            <div className="w-full max-w-lg flex flex-col items-center justify-center pt-2">
+              <Button
+                type="button"
+                onClick={() => {
+                  setHasStartedIntro(true)
+                  setActiveStep(1)
+                  if (doctor?.id) {
+                    saveOnboardingStep(doctor.id, 1)
+                  }
+                }}
+                className="rounded-full h-11 px-9 text-sm font-semibold bg-[#B7F20B] text-neutral-950 hover:bg-[#a6dc0a] shadow-xs hover:shadow transition-all cursor-pointer flex items-center gap-2"
+              >
+                <span>Começar</span>
+                <ArrowRight className="size-4" />
+              </Button>
+            </div>
           )}
-        </div>
+
+          {hasStartedIntro && (
+            <>
 
         {/* ========================================================== */}
         {/* ETAPA 1: CONFIGURAR AS NOTAS (SVG INTERATIVO + CARD TICKER)*/}
