@@ -25,7 +25,7 @@ function DashboardLayoutContent({
 
   React.useEffect(() => {
     let mounted = true
-    getCurrentDoctor().then((doc) => {
+    getCurrentDoctor().then(async (doc) => {
       if (!mounted) return
       setIsLoading(false)
       if (!doc) {
@@ -37,12 +37,25 @@ function DashboardLayoutContent({
         return
       }
       setDoctor(doc)
+
+      // Regra Estrita: Notas em produção liberadas EXCLUSIVAMENTE para assinantes ativos no banco
+      try {
+        const { getDoctorSubscription } = await import("@/features/billing/billing.repository")
+        const sub = await getDoctorSubscription(doc.id)
+        if (sub.status === "ativa") {
+          setAmbiente("producao")
+        } else {
+          setAmbiente("homologacao")
+        }
+      } catch {
+        setAmbiente("homologacao")
+      }
     })
 
     return () => {
       mounted = false
     }
-  }, [router])
+  }, [router, setAmbiente])
 
   const handleExitSandbox = React.useCallback(async () => {
     if (!doctor?.id) {

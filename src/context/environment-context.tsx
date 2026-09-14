@@ -14,15 +14,15 @@ interface EnvironmentContextType {
 const EnvironmentContext = React.createContext<EnvironmentContextType | undefined>(undefined)
 
 export function EnvironmentProvider({ children }: { children: React.ReactNode }) {
-  const [ambiente, setAmbienteState] = React.useState<AmbienteFiscal>("producao")
+  const [ambiente, setAmbienteState] = React.useState<AmbienteFiscal>("homologacao")
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("notomed_env")
-      if (saved === "homologacao") {
-        setAmbienteState("homologacao")
-      } else {
+      if (saved === "producao") {
         setAmbienteState("producao")
+      } else {
+        setAmbienteState("homologacao")
       }
     }
   }, [])
@@ -60,7 +60,7 @@ export function useEnvironment(): EnvironmentContextType {
   if (!ctx) {
     const isClient = typeof window !== "undefined"
     const saved = isClient ? localStorage.getItem("notomed_env") : null
-    const amb: AmbienteFiscal = saved === "homologacao" ? "homologacao" : "producao"
+    const amb: AmbienteFiscal = saved === "producao" ? "producao" : "homologacao"
     return {
       ambiente: amb,
       isSandbox: amb === "homologacao",

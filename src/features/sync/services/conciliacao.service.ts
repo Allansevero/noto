@@ -45,9 +45,19 @@ export async function processarConciliacao(
 ): Promise<ProcessarConciliacaoOutput> {
   const supabase = getServerSupabaseClient()
   const { medicoId, accountId, itemId, origem } = input
-  const isProduction = process.env.FOCUS_NFE_ENVIRONMENT === "producao"
 
-  console.log(`[ConciliacaoService] Iniciando conciliação. Origem: ${origem}, Medico: ${medicoId}, Account: ${accountId}`)
+  // Notas em produção são liberadas EXCLUSIVAMENTE para assinantes ativos no banco
+  const { data: subData } = await supabase
+    .from("assinaturas")
+    .select("status")
+    .eq("medico_id", medicoId)
+    .eq("status", "ativa")
+    .maybeSingle()
+
+  const isAssinanteAtivo = Boolean(subData && subData.status === "ativa")
+  const isProduction = process.env.FOCUS_NFE_ENVIRONMENT === "producao" && isAssinanteAtivo
+
+  console.log(`[ConciliacaoService] Iniciando conciliação. Origem: ${origem}, Medico: ${medicoId}, AssinanteAtivo: ${isAssinanteAtivo}, Producao: ${isProduction}`)
 
   let transactions = input.transactions || []
 

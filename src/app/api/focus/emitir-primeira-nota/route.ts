@@ -175,6 +175,28 @@ export async function POST(request: NextRequest) {
       requestedAmbiente
     )
 
+    // 3.5. Validação de Assinatura Ativa para Produção:
+    // Notas em produção são liberadas EXCLUSIVAMENTE para assinantes com pagamento em dia no banco de dados.
+    if (environment === "producao") {
+      const { data: subData } = await supabaseClient
+        .from("assinaturas")
+        .select("id, status")
+        .eq("medico_id", medicoId)
+        .eq("status", "ativa")
+        .maybeSingle()
+
+      if (!subData) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "A emissão de notas fiscais reais em produção é liberada exclusivamente para assinantes com pagamento em dia no banco de dados. Por favor, ative seu plano no menu Billing.",
+            requiresSubscription: true,
+          },
+          { status: 403 }
+        )
+      }
+    }
+
     // 4. Validação estrita de Tomador em Produção (nenhum dado de teste permitido em produção)
     if (environment === "producao") {
       if (!tomador?.cpfCnpj || !tomador?.nome) {
