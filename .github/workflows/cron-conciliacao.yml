@@ -1,0 +1,21 @@
+name: Conciliação Automática NotoMed
+
+on:
+  schedule:
+    # Executa automaticamente a cada 1 hora (100% gratuito sem precisar de Vercel Pro)
+    - cron: '0 * * * *'
+  workflow_dispatch: # Permite disparar manualmente quando quiser pelo painel do GitHub
+
+jobs:
+  conciliacao:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chamar endpoint de conciliação na Vercel
+        run: |
+          URL="${{ secrets.VERCEL_APP_URL }}"
+          if [ -z "$URL" ]; then
+            echo "VERCEL_APP_URL não configurada nos Secrets do GitHub. Pulando execução."
+            exit 0
+          fi
+          echo "Disparando conciliação em $URL..."
+          curl -s -f -X GET "$URL/api/cron/conciliacao" || echo "Aviso: Endpoint respondeu ou URL pendente"
